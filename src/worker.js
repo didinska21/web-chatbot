@@ -60,6 +60,21 @@ async function session(request, env) {
   return new Response(null, { status: ok ? 204 : 401 });
 }
 
+// Riwayat obrolan disimpan di KV (binding CHATS) supaya sama di semua perangkat.
+async function chats(request, env) {
+  if (!(await isLoggedIn(request, env.SESSION_SECRET))) return new Response("Unauthorized", { status: 401 });
+  if (!env.CHATS) return new Response("KV belum terpasang. Deploy ulang Worker.", { status: 500 });
+  if (request.method === "GET") {
+    const v = await env.CHATS.get("chats");
+    return new Response(v || '{"chats":[],"gone":{}}', { headers: { "Content-Type": "application/json" } });
+  }
+  const body = await request.text();
+  if (body.length > 5e6) return new Response("Data terlalu besar.", { status: 413 });
+  try { if (!Array.isArray(JSON.parse(body).chats)) throw 0; } catch { return new Response("Data tidak valid.", { status: 400 }); }
+  await env.CHATS.put("chats", body);
+  return json({ ok: true });
+}
+
 async function chat(request, env) {
   if (!(await isLoggedIn(request, env.SESSION_SECRET))) {
     return new Response("Unauthorized", { status: 401 });
@@ -88,7 +103,7 @@ export default {
       return withCors(new Response(null, {
         status: 204,
         headers: {
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Max-Age": "86400",
         },
@@ -99,6 +114,7 @@ export default {
     if (p === "/api/login" && request.method === "POST") res = await login(request, env);
     else if (p === "/api/session" && request.method === "GET") res = await session(request, env);
     else if (p === "/api/chat" && request.method === "POST") res = await chat(request, env);
+    else if (p === "/api/chats" && (request.method === "GET" || request.method === "PUT")) res = await chats(request, env);
     else res = new Response("Not found", { status: 404 });
     return withCors(res, origin);
   },
