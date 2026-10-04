@@ -152,6 +152,8 @@ dialog small{color:var(--mute);display:block;margin-top:4px;line-height:1.4}
 const $=s=>document.querySelector(s);
 const SUG=[["Buat skrip","Buatkan skrip Python untuk rename banyak file sekaligus"],["Cari bug","Cari bug di kode yang akan saya lampirkan"],["Jelaskan kode","Jelaskan cara kerja kode yang saya lampirkan"],["Buat proyek","Buatkan proyek Node.js dengan Express lengkap dengan semua filenya"]];
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const API='https://web-chatbot.mr-didinska21.workers.dev';
+const auth=()=>{const t=ls.get('tok',null);return t?{Authorization:'Bearer '+t}:{}};
 let cfg=ls.get('cfg',{url:'/api/chat',model:'',key:''});
 let chats=ls.get('chats',[]);
 let cur=null,busy=false,ctl=null,files=[];
@@ -225,10 +227,10 @@ async function send(text){
  $('#scroll').scrollTop=1e9;
  let out='';ctl=new AbortController();
  try{
-  const res=await fetch(cfg.url,{method:'POST',signal:ctl.signal,
-   headers:{'Content-Type':'application/json',...(cfg.key?{Authorization:'Bearer '+cfg.key}:{})},
+  const res=await fetch(API+'/api/chat',{method:'POST',signal:ctl.signal,
+   headers:{'Content-Type':'application/json',...auth()},
    body:JSON.stringify({model:cfg.model||undefined,stream:true,messages:[{role:'system',content:SYS},...cur.msgs.map(({role,content})=>({role,content}))]})});
-  if(res.status===401){showLock();throw new Error('Sesi berakhir. Masukkan PIN lagi.')}
+  if(res.status===401){ls.set('tok',null);showLock();throw new Error('Sesi berakhir. Masukkan PIN lagi.')}
   if(!res.ok)throw new Error('Server menjawab '+res.status+'. Periksa URL dan key di Pengaturan.');
   const ct=res.headers.get('content-type')||'';
   if(ct.includes('event-stream')){
@@ -280,12 +282,12 @@ function showLock(){$('#lock').classList.add('on');$('#pin').value='';setTimeout
 $('#lf').onsubmit=async e=>{
  e.preventDefault();$('#le').textContent='';
  try{
-  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('#pin').value})});
-  if(r.ok){$('#lock').classList.remove('on');$('#in').focus()}
+  const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('#pin').value})});
+  if(r.ok){const j=await r.json();ls.set('tok',j.token);$('#lock').classList.remove('on');$('#in').focus()}
   else{$('#le').textContent='PIN salah. Coba lagi.';$('#pin').value='';$('#pin').focus()}
  }catch{$('#le').textContent='Tidak bisa terhubung ke server.'}
 };
-fetch('/api/session').then(r=>{if(r.status===401)showLock()}).catch(()=>{});
+fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock()}).catch(()=>{});
 renderList();renderChat();
 </script>
 </body>
