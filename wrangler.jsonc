@@ -1,0 +1,18 @@
+{
+  "name": "web-chatbot",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true }
+
+  // Opsional: pasang domain otomatis saat deploy (domain harus aktif di akun
+  // Cloudflare yang sama, dan record DNS lama untuk nama itu harus dihapus dulu).
+  // "routes": [
+  //   { "pattern": "didinska.my.id", "custom_domain": true },
+  //   { "pattern": "www.didinska.my.id", "custom_domain": true }
+  // ]
+}
