@@ -1,14 +1,10 @@
 # web-chatbot
 
-Website chat AI untuk coding, dengan API custom. Dikunci dengan kode PIN dan dijalankan sebagai **Cloudflare Worker** (dengan static assets), dideploy lewat `wrangler`.
+Website chat AI untuk coding, dengan API custom.
 
-## Fitur
-
-- Tampilan chat dengan sidebar riwayat (tersimpan di browser), mode terang dan gelap, responsif untuk HP
-- Jawaban tampil bertahap (streaming)
-- Blok kode dengan nama file, tombol **Salin** dan **Unduh**, serta **Unduh semua (.zip)**
-- Lampirkan file kode (maks 300 KB per file)
-- Login PIN yang dicek di server; API key tersimpan di server
+- **Tampilan** di GitHub Pages (`didinska.my.id`), dari folder `docs/`
+- **Backend** di Cloudflare Worker (`web-chatbot.mr-didinska21.workers.dev`), menyimpan PIN dan API key di server
+- Login memakai token (header `Authorization: Bearer`), bukan cookie, karena tampilan dan backend beda domain
 
 ## Struktur
 
@@ -16,18 +12,18 @@ Website chat AI untuk coding, dengan API custom. Dikunci dengan kode PIN dan dij
 web-chatbot/
 ├── wrangler.jsonc      Konfigurasi Worker
 ├── src/
-│   └── worker.js       /api/login, /api/session, /api/chat (wajib login)
-└── public/
-    └── index.html      Tampilan chat (satu-satunya file yang dipublikasikan)
+│   └── worker.js       /api/login, /api/session, /api/chat (CORS + token)
+└── docs/
+    ├── index.html      Tampilan chat (dilayani GitHub Pages)
+    └── CNAME           didinska.my.id
 ```
 
-Hanya isi folder `public` yang menjadi file publik. Folder lain (termasuk `.git`) tidak ikut terunggah.
+## Deploy
 
-## Deploy (Git ke Cloudflare Worker)
-
-1. Upload isi folder ini ke repo GitHub (root repo harus berisi `wrangler.jsonc`, `src`, `public`).
-2. Di Cloudflare: **Workers & Pages** → Worker `web-chatbot` → **Settings → Builds**: build command kosong, deploy command `npx wrangler deploy`. Setiap commit ke `main` akan men-deploy otomatis.
-3. **Settings → Variables and Secrets**: tambahkan semuanya bertipe **Secret**:
+### 1. Worker (Cloudflare)
+1. Upload semua isi folder ini ke repo GitHub (root repo berisi `wrangler.jsonc`, `src`, `docs`).
+2. Cloudflare: Workers & Pages → Worker `web-chatbot` → Settings → Builds: build command kosong, deploy command `npx wrangler deploy`. Setiap commit ke `main` men-deploy otomatis.
+3. Settings → Variables and Secrets, semuanya bertipe **Secret**:
 
 | Nama | Isi |
 |---|---|
@@ -36,21 +32,29 @@ Hanya isi folder `public` yang menjadi file publik. Folder lain (termasuk `.git`
 | `API_URL` | Endpoint API AI, misalnya `https://api.groq.com/openai/v1/chat/completions` |
 | `API_KEY` | API key |
 | `MODEL` | Nama model, misalnya `openai/gpt-oss-120b` |
+| `ALLOWED_ORIGINS` | Opsional. Daftar domain frontend, pisahkan koma. Default: `https://didinska.my.id,https://www.didinska.my.id` |
 
-   Gunakan tipe Secret untuk semuanya. Variabel bertipe Text bisa terhapus saat deploy berikutnya.
-4. **Settings → Domains & Routes → Add → Custom domain**: isi `didinska.my.id` (dan `www.didinska.my.id`). Domain harus aktif di akun Cloudflare yang sama dengan Worker. Record DNS lama dengan nama yang sama (misalnya record A ke GitHub Pages) harus dihapus dulu. Record DNS untuk Worker dibuat otomatis, tidak perlu CNAME manual.
+### 2. Tampilan (GitHub Pages)
+1. Repo → Settings → Pages: Source **Deploy from a branch**, branch `main`, folder `/docs`.
+2. Custom domain: `didinska.my.id`, lalu centang Enforce HTTPS.
+
+### 3. DNS (di IDwebhost)
+- 4 record **A** untuk `@`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+- **CNAME** `www` ke `<username-github>.github.io`
+
+## Mengganti alamat Worker
+Kalau alamat Worker berubah, ubah konstanta `API` di `docs/index.html`.
 
 ## Keamanan
-
-- Jangan menaruh API key di `index.html` atau di Pengaturan browser.
+- Jangan menaruh API key di `index.html`.
 - Pasang rate limiting untuk path `/api/login` (Security → WAF → Rate limiting rules), misalnya 5 percobaan per menit per IP.
-- Kalau PIN bocor, ganti `PIN` dan `SESSION_SECRET`.
+- Kalau PIN bocor, ganti `PIN` dan `SESSION_SECRET` (semua token lama jadi tidak berlaku).
 
 ## Masalah umum
 
 | Gejala | Penyebab dan solusi |
 |---|---|
 | Layar PIN muncul terus | `PIN` atau `SESSION_SECRET` belum diisi sebagai Secret |
+| "Tidak bisa terhubung ke server" | Alamat `API` di `docs/index.html` salah, atau domain frontend belum ada di `ALLOWED_ORIGINS` |
 | Error 401 saat chat | Sesi habis. Masukkan PIN lagi |
-| `/api/...` menampilkan halaman biasa | `run_worker_first` belum terbaca; pastikan `wrangler.jsonc` ada di root repo |
 | Jawaban kosong atau error 4xx/5xx | Periksa `API_URL`, `API_KEY`, `MODEL` |
