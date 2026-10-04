@@ -18,25 +18,41 @@ async function makeToken(secret) {
   return exp + "." + (await sign(String(exp), secret));
 }
 
+// Token dikirim lewat header Authorization: Bearer <token>
 async function isLoggedIn(request, secret) {
-  const m = /(?:^|; )sess=([^;]+)/.exec(request.headers.get("Cookie") || "");
+  const m = /^Bearer (.+)$/.exec(request.headers.get("Authorization") || "");
   if (!m || !secret) return false;
   const [exp, sig] = m[1].split(".");
   if (!exp || !sig || Number(exp) < Date.now()) return false;
   return safeEq(sig, await sign(exp, secret));
 }
 
-const json = (o, status = 200, h = {}) =>
-  new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", ...h } });
+// Domain yang boleh memanggil API ini (frontend di GitHub Pages).
+// Bisa diganti lewat Secret/Variable ALLOWED_ORIGINS (pisahkan dengan koma).
+function allowedOrigin(request, env) {
+  const list = (env.ALLOWED_ORIGINS || "https://didinska.my.id,https://www.didinska.my.id")
+    .split(",").map(s => s.trim()).filter(Boolean);
+  const o = request.headers.get("Origin");
+  return o && list.includes(o) ? o : null;
+}
+
+function withCors(res, origin) {
+  const h = new Headers(res.headers);
+  if (origin) {
+    h.set("Access-Control-Allow-Origin", origin);
+    h.set("Vary", "Origin");
+  }
+  return new Response(res.body, { status: res.status, headers: h });
+}
+
+const json = (o, status = 200) =>
+  new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
 
 async function login(request, env) {
   const { pin } = await request.json().catch(() => ({}));
   await new Promise(r => setTimeout(r, 600)); // perlambat tebak-tebakan PIN
-  if (!env.PIN || !safeEq(String(pin || ""), String(env.PIN))) return json({ ok: false }, 401);
-  const t = await makeToken(env.SESSION_SECRET);
-  return json({ ok: true }, 200, {
-    "Set-Cookie": `sess=${t}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`,
-  });
+  if (!env.PIN || !env.SESSION_SECRET || !safeEq(String(pin || ""), String(env.PIN))) return json({ ok: false }, 401);
+  return json({ ok: true, token: await makeToken(env.SESSION_SECRET) });
 }
 
 async function session(request, env) {
@@ -66,10 +82,24 @@ async function chat(request, env) {
 export default {
   async fetch(request, env) {
     const { pathname: p } = new URL(request.url);
-    if (p === "/api/login" && request.method === "POST") return login(request, env);
-    if (p === "/api/session" && request.method === "GET") return session(request, env);
-    if (p === "/api/chat" && request.method === "POST") return chat(request, env);
-    if (p.startsWith("/api/")) return new Response("Not found", { status: 404 });
-    return env.ASSETS.fetch(request);
+    const origin = allowedOrigin(request, env);
+
+    if (request.method === "OPTIONS") {
+      return withCors(new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400",
+        },
+      }), origin);
+    }
+
+    let res;
+    if (p === "/api/login" && request.method === "POST") res = await login(request, env);
+    else if (p === "/api/session" && request.method === "GET") res = await session(request, env);
+    else if (p === "/api/chat" && request.method === "POST") res = await chat(request, env);
+    else res = new Response("Not found", { status: 404 });
+    return withCors(res, origin);
   },
 };
