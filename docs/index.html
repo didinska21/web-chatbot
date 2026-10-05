@@ -3,25 +3,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>didinska.ai</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&text=0123456789&display=swap" rel="stylesheet">
 <script>(()=>{const T=['graphite','aurora','porcelain','glacier'];let t;try{t=JSON.parse(localStorage.getItem('theme'))}catch{}t=({dark:'graphite',light:'porcelain'})[t]||t;if(!T.includes(t))t=matchMedia('(prefers-color-scheme:light)').matches?'porcelain':'graphite';document.documentElement.dataset.theme=t})()</script>
 <style>
-@font-face{font-family:Codec;font-weight:400;font-style:normal;font-display:swap;src:url(fonts/codec-400.woff2) format('woff2')}
-@font-face{font-family:Codec;font-weight:700;font-style:normal;font-display:swap;src:url(fonts/codec-700.woff2) format('woff2')}
-@font-face{font-family:Code;font-weight:700;font-style:normal;font-display:swap;src:url(fonts/code-700.woff2) format('woff2')}
+@font-face{font-family:'Space Mono';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/space-mono-400.woff2) format('woff2')}
+@font-face{font-family:'Space Mono';font-weight:700;font-style:normal;font-display:swap;src:url(fonts/space-mono-700.woff2) format('woff2')}
 :root,[data-theme=graphite]{--bg:#1F232A;--sf:#252A32;--sf2:#2F353F;--bd:rgba(255,255,255,.08);--tx:#EEF2F6;--mu:#8B95A3;--on:#0B1217;--g:#60DAFB;--a1:#60DAFB;--ac:#60DAFB;--aura:10%;--sh:0 16px 48px rgba(0,0,0,.35)}
 [data-theme=aurora]{--bg:#0C0F13;--sf:#12161C;--sf2:#1B2028;--bd:rgba(96,218,251,.13);--tx:#EAF6FB;--mu:#7F93A1;--on:#0B1217;--g:#60DAFB;--a1:#60DAFB;--ac:#60DAFB;--aura:24%;--sh:0 16px 48px rgba(0,0,0,.55)}
 [data-theme=porcelain]{--bg:#FFFFFF;--sf:#F6F8FA;--sf2:#EBEFF3;--bd:rgba(31,35,42,.1);--tx:#1F232A;--mu:#5C6673;--on:#FFFFFF;--g:#1F232A;--a1:#2FC2EA;--ac:#0A8FB0;--aura:9%;--sh:0 12px 36px rgba(31,35,42,.09)}
 [data-theme=glacier]{--bg:#E8F8FD;--sf:#FFFFFF;--sf2:#D3EFF9;--bd:rgba(31,35,42,.1);--tx:#1F232A;--mu:#4F6270;--on:#10202A;--g:#60DAFB;--a1:#35C5EE;--ac:#0A8FB0;--aura:18%;--sh:0 12px 36px rgba(31,35,42,.1)}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
-body{font:15px/1.65 Codec,Montserrat,system-ui,sans-serif;background:var(--bg);color:var(--tx);overflow:hidden}
+body{font:14px/1.7 'Space Mono',ui-monospace,monospace;background:var(--bg);color:var(--tx);overflow:hidden}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(900px 420px at 50% -8%,color-mix(in srgb,var(--a1) var(--aura,10%),transparent),transparent 70%)}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
-.logo{font:700 38px/1.1 Code,Codec,sans-serif;letter-spacing:.02em;padding-bottom:2px}
+.logo{font:700 28px/1.15 'Space Mono',monospace;letter-spacing:-.04em;padding-bottom:2px}
 .logo i{padding-right:.14em}
 .logo i{font-style:normal;color:var(--ac)}
 #app{position:relative;display:flex;height:100dvh}
@@ -44,17 +40,17 @@ header{display:none;align-items:center;gap:12px;padding:calc(10px + env(safe-are
 .msg{display:flex;gap:12px;margin:22px 0;animation:in .3s ease}
 .msg.user{justify-content:flex-end}
 .msg.user .b{background:var(--sf2);border:1px solid var(--bd);padding:10px 15px;border-radius:18px 18px 5px 18px;max-width:85%;white-space:pre-wrap;word-break:break-word}
-.av{width:32px;height:32px;border-radius:11px;background:var(--g);color:var(--on);font:700 15px Code,Codec,sans-serif;display:grid;place-items:center;flex:none;box-shadow:0 4px 14px color-mix(in srgb,var(--a1) 40%,transparent)}
+.av{width:32px;height:32px;border-radius:11px;background:var(--g);color:var(--on);font:700 15px 'Space Mono',monospace;display:grid;place-items:center;flex:none;box-shadow:0 4px 14px color-mix(in srgb,var(--a1) 40%,transparent)}
 .bot .b{flex:1;min-width:0;word-break:break-word}
-.b p{margin:0 0 .7em}.b h2,.b h3,.b h4{font-family:Code,Codec,sans-serif;margin:1em 0 .4em;letter-spacing:-.01em}
+.b p{margin:0 0 .7em}.b h2,.b h3,.b h4{font-family:'Space Mono',monospace;margin:1em 0 .4em;letter-spacing:-.01em}
 .b ul,.b ol{padding-left:1.3em;margin:0 0 .7em}.b li{margin:.15em 0}
-.b code{background:var(--sf2);padding:.12em .42em;border-radius:6px;font:.86em 'Geist Mono',monospace}
+.b code{background:var(--sf2);padding:.12em .42em;border-radius:6px;font:.86em 'Space Mono',monospace}
 .cb{margin:.9em 0;border-radius:14px;overflow:hidden;background:#14171C;border:1px solid rgba(255,255,255,.08);box-shadow:var(--sh)}
-.ch{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 14px;background:#1B1F26;color:#8B95A3;font:500 12px 'Geist Mono',monospace}
+.ch{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 14px;background:#1B1F26;color:#8B95A3;font:500 12px 'Space Mono',monospace}
 .ch span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ch button{padding:4px 10px;border-radius:8px;color:#D7DEE7;background:rgba(255,255,255,.06);font:500 12px Codec,Montserrat,sans-serif}.ch button:hover{background:rgba(255,255,255,.12)}
+.ch button{padding:4px 10px;border-radius:8px;color:#D7DEE7;background:rgba(255,255,255,.06);font:500 12px 'Space Mono',monospace}.ch button:hover{background:rgba(255,255,255,.12)}
 .cb pre{margin:0;padding:14px;overflow-x:auto}
-.cb code{background:none;padding:0;color:#D7DEE7;font:13px/1.7 'Geist Mono',monospace;white-space:pre}
+.cb code{background:none;padding:0;color:#D7DEE7;font:13px/1.7 'Space Mono',monospace;white-space:pre}
 .hljs-keyword,.hljs-selector-tag,.hljs-literal{color:#60DAFB}.hljs-string,.hljs-regexp,.hljs-addition{color:#A8E6CF}.hljs-number,.hljs-symbol,.hljs-bullet{color:#F2C879}.hljs-comment,.hljs-quote{color:#5E6A7A;font-style:italic}.hljs-title,.hljs-function{color:#FFFFFF}.hljs-built_in,.hljs-type,.hljs-attr,.hljs-class .hljs-title{color:#7FB4FF}.hljs-variable,.hljs-params,.hljs-template-variable,.hljs-name,.hljs-tag{color:#F08A8A}.hljs-meta,.hljs-attribute{color:#9AA7B8}.hljs-deletion{color:#ff7a7a}
 .zipall{margin-top:4px;padding:9px 15px;border-radius:12px;background:var(--sf2);border:1px solid var(--bd);font-size:13px}.zipall:hover{border-color:var(--a1)}
 .cur::after{content:"";display:inline-block;width:7px;height:1.05em;margin-left:2px;vertical-align:-.15em;border-radius:2px;background:var(--a1);animation:bl 1s steps(2) infinite}
@@ -62,7 +58,7 @@ header{display:none;align-items:center;gap:12px;padding:calc(10px + env(safe-are
 .err{color:#ff6b81;padding:10px 14px;border:1px solid rgba(255,107,129,.4);border-radius:12px;background:rgba(255,107,129,.08)}
 @keyframes bl{50%{opacity:0}}@keyframes dt{0%,60%,100%{transform:none;opacity:.4}30%{transform:translateY(-5px);opacity:1}}@keyframes in{from{opacity:0;transform:translateY(8px)}}
 .empty{min-height:100%;display:flex;flex-direction:column;justify-content:center;text-align:center;padding-bottom:6vh}
-.empty h1{font:700 clamp(26px,5.6vw,40px)/1.2 Code,Codec,sans-serif;letter-spacing:.01em}
+.empty h1{font:700 clamp(22px,5vw,34px)/1.25 'Space Mono',monospace;letter-spacing:-.03em}
 .empty p{color:var(--mu);margin:10px 0 26px}
 .sugs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;text-align:left}
 .sug{padding:14px 16px;border-radius:16px;background:var(--sf);border:1px solid var(--bd);transition:transform .15s,border-color .15s}
@@ -84,6 +80,14 @@ footer small{display:block;text-align:center;color:var(--mu);font-size:12px;marg
 #lf button{padding:13px;border-radius:14px;background:var(--g);color:var(--on);font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px color-mix(in srgb,var(--a1) 26%,transparent)}
 #le{color:#ff6b81;font-size:13px;min-height:1.2em}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(128,128,160,.3);border-radius:8px}
+#tools{display:flex;flex-direction:column;gap:8px}
+#model,#diag{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-size:13px;text-align:left}
+#diag{background:none;color:var(--mu)}#diag:hover{color:var(--tx)}
+#dg{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.6)}#dg.on{display:grid}
+#dgc{width:100%;max-width:560px;max-height:85dvh;overflow:auto;padding:20px;border-radius:20px;background:var(--sf);border:1px solid var(--bd);box-shadow:var(--sh);display:flex;flex-direction:column;gap:12px}
+#dgt{white-space:pre-wrap;word-break:break-word;font:13px/1.6 'Space Mono',monospace}
+#dgc button{align-self:flex-end;padding:9px 16px;border-radius:12px;background:var(--g);color:var(--on);font-weight:600}
+.err small{display:inline-block;margin-top:3px;color:var(--tx);opacity:.8}.err .ec{font-family:'Space Mono',monospace;opacity:.6}
 ::selection{background:color-mix(in srgb,var(--a1) 35%,transparent)}
 button:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
 ::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--mu) 55%,transparent)}
@@ -100,7 +104,7 @@ body.open #ov{opacity:1;pointer-events:auto}
 <body>
 <div id="lock"><form id="lf" autocomplete="off"><div class="logo">didinska<i>.ai</i></div><p>Masukkan PIN untuk masuk</p><input id="pin" type="password" placeholder="••••••" aria-label="PIN"><button>Masuk</button><div id="le"></div></form></div>
 <div id="app">
-<aside id="side"><div class="logo">didinska<i>.ai</i></div><button id="new">+ Obrolan baru</button><div id="list"></div><div id="tp"><div id="themes"></div><small id="tn"></small></div></aside>
+<aside id="side"><div class="logo">didinska<i>.ai</i></div><button id="new">+ Obrolan baru</button><div id="list"></div><div id="tools"><select id="model" aria-label="Model"><option value="">Model: bawaan server</option></select><button type="button" id="diag">Diagnosa koneksi</button></div><div id="tp"><div id="themes"></div><small id="tn"></small></div></aside>
 <div id="ov"></div>
 <main>
 <header><button id="menu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><div class="logo">didinska<i>.ai</i></div></header>
@@ -109,6 +113,7 @@ body.open #ov{opacity:1;pointer-events:auto}
 <form id="form"><button type="button" id="clip" aria-label="Lampirkan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.6l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"/></svg></button><input type="file" id="fi" multiple hidden><textarea id="in" rows="1" placeholder="Tulis pesan…" aria-label="Pesan"></textarea><button id="send" disabled>↑</button></form>
 <small>AI bisa salah. Cek ulang info penting.</small></footer>
 </main></div>
+<div id="dg"><div id="dgc"><b>Diagnosa koneksi</b><pre id="dgt"></pre><button type="button" id="dgx">Tutup</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>
@@ -177,16 +182,16 @@ async function sync(){
  if(busy){clearTimeout(st);st=setTimeout(sync,2500);return}
  try{
   const r=await fetch(API+'/api/chats',{headers:auth()});
-  if(!r.ok)return;
+  if(!r.ok){console.warn('[sync] GET /api/chats gagal',await readErr(r));return}
   const raw=await r.text(),s=JSON.parse(raw);
   const m=merge({chats,gone},{chats:s.chats||[],gone:s.gone||{}});
   const id=cur&&cur.id,prev=JSON.stringify(cur&&cur.msgs);
   chats=m.chats;gone=m.gone;cur=id?chats.find(c=>c.id===id)||null:null;
   ls.set('chats',chats);ls.set('gone',gone);
   const out=JSON.stringify(m);
-  if(out!==raw)await fetch(API+'/api/chats',{method:'PUT',headers:{'Content-Type':'application/json',...auth()},body:out});
+  if(out!==raw){const pr=await fetch(API+'/api/chats',{method:'PUT',headers:{'Content-Type':'application/json',...auth()},body:out});if(!pr.ok)console.warn('[sync] PUT /api/chats gagal',await readErr(pr))}
   if(!busy){renderList();if(JSON.stringify(cur&&cur.msgs)!==prev)renderChat()}
- }catch{}
+ }catch(e){console.warn('[sync] gagal',e)}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 function renderList(){
@@ -217,6 +222,15 @@ function addMsg(role,text,fl){
  if(role==='user')b.textContent=(fl&&fl.length?fl.map(n=>'📎 '+n).join('\n')+'\n':'')+text;else b.innerHTML=md(text,true);
  $('#chat').appendChild(d);return b;
 }
+class ApiErr extends Error{constructor(info){super(info.message);this.info=info}}
+async function readErr(res){let j=null;try{j=await res.json()}catch{}const e=j&&j.error;if(e&&e.code)return e;return{code:'http_'+res.status,source:'worker',message:'Server menjawab '+res.status+(res.statusText?' '+res.statusText:''),hint:'Balasan bukan dari Worker versi terbaru. Deploy ulang Worker lalu coba lagi.'}}
+const SRC={auth:'Sesi / PIN',config:'Konfigurasi Worker',worker:'Worker',upstream:'Provider API',network:'Jaringan / CORS',client:'Halaman (browser)'};
+function errBox(i){return '<div class="err"><b>'+esc(SRC[i.source]||i.source||'Error')+'</b> — '+esc(i.message||'')+(i.hint?'<br><small>'+esc(i.hint)+'</small>':'')+'<br><small class="ec">kode: '+esc(i.code||'?')+(i.upstream_status?' · provider: '+i.upstream_status:'')+(i.rid?' · ref: '+esc(i.rid):'')+'</small></div>'}
+function toInfo(e){
+ if(e instanceof ApiErr)return e.info;
+ if(e instanceof TypeError&&/fetch|network|load failed/i.test(e.message))return{code:'network',source:'network',message:'Browser tidak bisa menghubungi Worker.',hint:'Cek koneksi internet, alamat API di index.html, dan ALLOWED_ORIGINS di Worker ('+location.origin+' harus terdaftar).'};
+ return{code:'client',source:'client',message:e.message||'Kesalahan di halaman.',hint:'Buka Console browser untuk detail.'};
+}
 async function send(text){
  text=text.trim();if((!text&&!files.length)||busy)return;
  const att=files.splice(0);renderChips();
@@ -234,9 +248,8 @@ async function send(text){
  try{
   const res=await fetch(API+'/api/chat',{method:'POST',signal:ctl.signal,
    headers:{'Content-Type':'application/json',...auth()},
-   body:JSON.stringify({stream:true,messages:[{role:'system',content:SYS},...cur.msgs.map(({role,content})=>({role,content}))]})});
-  if(res.status===401){ls.set('tok',null);showLock();throw new Error('Sesi berakhir. Masukkan PIN lagi.')}
-  if(!res.ok)throw new Error('Server menjawab '+res.status+'. Periksa pengaturan API di Cloudflare.');
+   body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),messages:[{role:'system',content:SYS},...cur.msgs.map(({role,content})=>({role,content}))]})});
+  if(!res.ok){const e=await readErr(res);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
   const ct=res.headers.get('content-type')||'';
   if(ct.includes('event-stream')){
    const rd=res.body.getReader(),dec=new TextDecoder();let buf='';
@@ -246,21 +259,25 @@ async function send(text){
     const lines=buf.split('\n');buf=lines.pop();
     for(const l of lines){
      if(!l.startsWith('data:'))continue;const p=l.slice(5).trim();if(!p||p==='[DONE]')continue;
-     try{const j=JSON.parse(p);out+=j.choices?.[0]?.delta?.content??j.delta?.text??''}catch{}
+     let j;try{j=JSON.parse(p)}catch{continue}
+     if(j.error)throw new ApiErr({code:'upstream_stream_error',source:'upstream',message:'Provider mengirim error di tengah stream: '+String(j.error.message||JSON.stringify(j.error)).slice(0,300),hint:'Coba lagi atau ganti model.'});
+     out+=j.choices?.[0]?.delta?.content??j.delta?.text??'';
     }
     if(out){b.innerHTML=md(out,false);b.classList.add('cur')}
     $('#scroll').scrollTop=1e9;
    }
   }else{
    const j=await res.json();
+   if(j.error)throw new ApiErr({code:'upstream_body_error',source:'upstream',message:String(j.error.message||JSON.stringify(j.error)).slice(0,300),hint:'Cek model dan API key.'});
    out=j.choices?.[0]?.message?.content??j.content?.[0]?.text??j.reply??j.text??JSON.stringify(j);
   }
+  if(!out)console.warn('[chat] provider membalas tanpa isi',res.status,ct);
   b.classList.remove('cur');b.innerHTML=md(out||'(kosong)',true);
   cur.msgs.push({role:'assistant',content:out});save();
  }catch(e){
   b.classList.remove('cur');
   if(e.name==='AbortError'){b.innerHTML=out?md(out,true):'';if(out){cur.msgs.push({role:'assistant',content:out});save()}else cur.msgs.pop()}
-  else{b.innerHTML='<div class="err">'+esc(e.message||'Gagal terhubung ke API.')+'</div>';cur.msgs.pop();save()}
+  else{const info=toInfo(e);console.error('[chat]',info,e);b.innerHTML=errBox(info);cur.msgs.pop();save();$('#in').value=text;files.unshift(...att);renderChips();fit()}
  }
  setBusy(false);$('#scroll').scrollTop=1e9;
 }
@@ -288,11 +305,36 @@ $('#lf').onsubmit=async e=>{
  e.preventDefault();$('#le').textContent='';
  try{
   const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('#pin').value})});
-  if(r.ok){const j=await r.json();ls.set('tok',j.token);$('#lock').classList.remove('on');$('#in').focus();sync()}
-  else{$('#le').textContent='PIN salah. Coba lagi.';$('#pin').value='';$('#pin').focus()}
- }catch{$('#le').textContent='Tidak bisa terhubung ke server.'}
+  if(r.ok){const j=await r.json();ls.set('tok',j.token);$('#lock').classList.remove('on');$('#in').focus();sync();loadModels()}
+  else{const e=await readErr(r);console.error('[login]',e);$('#le').textContent=e.code==='pin_wrong'?'PIN salah. Coba lagi.':e.message+(e.hint?' '+e.hint:'')+' ('+e.code+')';$('#pin').value='';$('#pin').focus()}
+ }catch(err){console.error('[login]',err);$('#le').textContent='Tidak bisa terhubung ke Worker. Cek alamat API dan ALLOWED_ORIGINS ('+location.origin+').'}
 };
-fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else sync()}).catch(()=>{});
+function fillModels(list,def){
+ const sel=$('#model'),saved=ls.get('model','');
+ const all=[...new Set([...list,...(saved?[saved]:[])])];
+ sel.innerHTML='<option value="">Model: bawaan server'+(def?' ('+esc(def)+')':'')+'</option>'+all.map(m=>'<option value="'+esc(m)+'">'+esc(m)+'</option>').join('');
+ sel.value=saved;
+}
+async function loadModels(){
+ try{
+  const r=await fetch(API+'/api/models',{headers:auth()});
+  if(!r.ok){console.warn('[models] gagal',await readErr(r));return}
+  const j=await r.json();fillModels(j.models||[],j.default);
+ }catch(e){console.warn('[models] gagal',e)}
+}
+$('#model').onchange=e=>ls.set('model',e.target.value);
+$('#diag').onclick=async()=>{
+ const box=$('#dg'),t=$('#dgt');t.textContent='Memeriksa…';box.classList.add('on');
+ try{
+  const r=await fetch(API+'/api/diag',{headers:auth()});
+  if(!r.ok){const e=await readErr(r);t.textContent='✗ '+e.message+(e.hint?'\n  '+e.hint:'')+'\n  kode: '+e.code;if(e.code==='session_invalid'){ls.set('tok',null);box.classList.remove('on');showLock()}return}
+  const j=await r.json();
+  t.textContent=j.checks.map(c=>(c.ok?'✓ ':'✗ ')+c.name+'\n    '+c.detail).join('\n')+'\n\n'+(j.ok?'Semua OK.':'Ada yang bermasalah (✗). Perbaiki dari atas ke bawah.')+'\nref: '+j.rid;
+ }catch(e){console.error('[diag]',e);t.textContent='✗ Browser tidak bisa menghubungi Worker.\n  Cek alamat API di index.html dan ALLOWED_ORIGINS ('+location.origin+').'}
+};
+$('#dgx').onclick=()=>$('#dg').classList.remove('on');
+fillModels([],'');
+fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sync();loadModels()}}).catch(e=>console.warn('[session] tidak bisa menghubungi Worker',e));
 renderList();renderChat();
 </script>
 </body></html>
