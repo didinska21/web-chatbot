@@ -184,6 +184,73 @@ async function models(request, env, rid) {
   return json({ ok: true, models: ids, default: env.MODEL || "" });
 }
 
+// ===== Grafik emas / forex (Twelve Data) =====
+// API key Twelve Data disimpan di Secret TWELVEDATA_KEY, tidak pernah dikirim ke browser.
+const FX_SYMBOLS = ["XAU/USD"];
+// Lama hasil disimpan di memori Worker (detik). Tujuannya menghemat kuota Twelve Data (paket gratis: 8/menit, 800/hari).
+const FX_TTL = { "1min": 45, "5min": 90, "15min": 240, "1h": 600, "4h": 1800, "1day": 3600 };
+const fxCache = new Map(); // best-effort: hidup selama isolate Worker masih aktif
+const FX_HINTS = {
+  400: "Simbol atau parameter ditolak Twelve Data.",
+  401: "TWELVEDATA_KEY salah atau belum aktif. Cek key di dashboard twelvedata.com.",
+  403: "Paket Twelve Data-mu kemungkinan belum mencakup simbol ini (XAU/USD). Cek paket di twelvedata.com/pricing.",
+  404: "Data tidak ditemukan untuk simbol ini.",
+  429: "Kuota Twelve Data habis (paket gratis: 8 permintaan per menit, 800 per hari). Tunggu sebentar lalu coba lagi.",
+};
+async function forex(request, env, rid) {
+  await requireAuth(request, env, rid);
+  need(env, ["TWELVEDATA_KEY"]);
+  const q = new URL(request.url).searchParams;
+  const symbol = q.get("symbol") || "XAU/USD", interval = q.get("interval") || "5min";
+  if (!FX_SYMBOLS.includes(symbol)) throw new AppError(400, "bad_request", "client", "Simbol tidak didukung: " + symbol, "Yang diizinkan: " + FX_SYMBOLS.join(", "));
+  if (!FX_TTL[interval]) throw new AppError(400, "bad_request", "client", "Interval tidak didukung: " + interval, "Yang diizinkan: " + Object.keys(FX_TTL).join(", "));
+  const key = symbol + "|" + interval, now = Date.now(), hit = fxCache.get(key);
+  if (hit && now - hit.t < FX_TTL[interval] * 1000) return json({ ...hit.data, cached: true, age: Math.round((now - hit.t) / 1000) });
+
+  // Kalau Twelve Data gagal tapi ada data lama (maks 15 menit), tampilkan data lama daripada layar kosong.
+  const fail = (err) => {
+    if (hit && now - hit.t < 15 * 60e3) {
+      log("warn", rid, "forex_stale", { code: err.code, msg: err.message });
+      return json({ ...hit.data, cached: true, stale: true, age: Math.round((now - hit.t) / 1000), note: err.message });
+    }
+    throw err;
+  };
+
+  const u = new URL("https://api.twelvedata.com/time_series");
+  u.search = new URLSearchParams({ symbol, interval, outputsize: "100", timezone: "Asia/Jakarta", apikey: env.TWELVEDATA_KEY }).toString();
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
+  const t0 = Date.now();
+  let res, j;
+  try {
+    res = await fetch(u, { signal: ctl.signal });
+    j = await res.json().catch(() => null);
+  } catch (e) {
+    const timeout = e && e.name === "AbortError";
+    log("error", rid, "upstream_fail", { label: "forex", host: "api.twelvedata.com", timeout, msg: String((e && e.message) || e) });
+    return fail(new AppError(timeout ? 504 : 502, timeout ? "upstream_timeout" : "upstream_unreachable", "upstream",
+      timeout ? "Twelve Data tidak menjawab dalam 15 detik." : "Worker tidak bisa menghubungi Twelve Data.", "Coba lagi sebentar lagi."));
+  } finally { clearTimeout(timer); }
+  log(res.ok ? "info" : "warn", rid, "upstream", { label: "forex", host: "api.twelvedata.com", status: res.status, ms: Date.now() - t0 });
+
+  const code = Number((j && j.code) || (!res.ok && res.status) || 0);
+  if ((j && j.status === "error") || !res.ok || !j || !Array.isArray(j.values)) {
+    const msg = String((j && j.message) || res.statusText || "balasan tidak dikenali").replace(/\s+/g, " ").replace(/apikey=[^&\s]+/gi, "apikey=***").slice(0, 300);
+    const hint = FX_HINTS[code] || (code >= 500 ? "Twelve Data sedang bermasalah. Coba lagi nanti." : "Lihat pesan dari Twelve Data.");
+    log("error", rid, "upstream_error", { label: "forex", status: code || res.status, detail: msg });
+    return fail(new AppError(502, "upstream_error", "upstream", `Twelve Data menjawab ${code || res.status}: ${msg}`, hint, { upstream_status: code || res.status }));
+  }
+
+  const values = j.values
+    .map(v => ({ t: String(v.datetime), o: +v.open, h: +v.high, l: +v.low, c: +v.close }))
+    .filter(v => [v.o, v.h, v.l, v.c].every(Number.isFinite))
+    .sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+  if (!values.length) return fail(new AppError(502, "upstream_bad_format", "upstream", "Twelve Data tidak mengirim candle.", "Pasar mungkin tutup atau simbol belum tersedia di paketmu."));
+  const left = res.headers.get("api-credits-left"), used = res.headers.get("api-credits-used");
+  const data = { ok: true, symbol, interval, tz: "Asia/Jakarta", values, credits: { left: left == null ? null : Number(left), used: used == null ? null : Number(used) } };
+  fxCache.set(key, { t: now, data });
+  return json({ ...data, cached: false, age: 0 });
+}
+
 // Pemeriksaan satu per satu: Secret, KV, origin, dan koneksi ke provider.
 async function diag(request, env, rid) {
   await requireAuth(request, env, rid);
@@ -203,6 +270,7 @@ async function diag(request, env, rid) {
   const k = String(env.API_KEY || "");
   add("API_KEY", !!k, k ? "terisi, awalan " + (k.includes("_") ? k.split("_")[0] + "_" : k.slice(0, 3) + "…") : "belum diisi");
   add("MODEL", true, env.MODEL || "(kosong, model dipilih dari sidebar)");
+  add("TWELVEDATA_KEY", !!env.TWELVEDATA_KEY, env.TWELVEDATA_KEY ? "terisi (grafik XAU/USD)" : "belum diisi (menu Grafik XAU/USD tidak akan jalan)");
   if (!env.CHATS) add("KV CHATS", false, "belum terpasang, deploy ulang Worker");
   else { try { await env.CHATS.get("chats"); add("KV CHATS", true, "bisa dibaca"); } catch (e) { add("KV CHATS", false, String(e.message || e)); } }
   const reqOrigin = request.headers.get("Origin") || "";
@@ -274,6 +342,7 @@ export default {
       else if (p === "/api/chat" && m === "POST") res = await chat(request, env, rid);
       else if (p === "/api/chats" && (m === "GET" || m === "PUT")) res = await chats(request, env, rid);
       else if (p === "/api/models" && m === "GET") res = await models(request, env, rid);
+      else if (p === "/api/forex" && m === "GET") res = await forex(request, env, rid);
       else if (p === "/api/diag" && m === "GET") res = await diag(request, env, rid);
       else throw new AppError(404, "not_found", "worker", `Path tidak dikenal: ${m} ${p}`, "Cek alamat API di docs/index.html.");
     } catch (e) {
