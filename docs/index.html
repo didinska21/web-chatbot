@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem('theme'))||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark')}catch{document.documentElement.dataset.theme='dark'}</script>
 <style>
+@font-face{font-family:Astoria;font-weight:400;font-style:normal;font-display:swap;src:url(fonts/astoria.woff) format('woff')}
 :root{--bg:#0a0a11;--sf:#12121c;--sf2:#1b1b2a;--bd:rgba(255,255,255,.08);--tx:#ededf5;--mu:#8a8aa3;--a1:#7c5cff;--g:linear-gradient(135deg,#7c5cff,#38b6ff);--sh:0 12px 40px rgba(0,0,0,.4)}
 [data-theme=light]{--bg:#f5f5fa;--sf:#fff;--sf2:#eeeef7;--bd:rgba(20,20,50,.1);--tx:#15152b;--mu:#68688a;--sh:0 12px 32px rgba(40,40,90,.12)}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
@@ -15,7 +16,8 @@ body{font:15px/1.65 Figtree,system-ui,sans-serif;background:var(--bg);color:var(
 body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(600px 360px at 85% -5%,rgba(124,92,255,.2),transparent 70%),radial-gradient(500px 320px at 0 100%,rgba(56,182,255,.1),transparent 70%)}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
-.logo{font:700 21px 'Bricolage Grotesque',sans-serif;letter-spacing:-.02em}
+.logo{font:400 46px/1.05 Astoria,'Bricolage Grotesque',cursive;letter-spacing:0;padding-bottom:2px}
+.logo i{padding-right:.14em}
 .logo i,.empty em{font-style:normal;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
 #app{position:relative;display:flex;height:100dvh}
 #side{width:272px;flex:none;display:flex;flex-direction:column;gap:14px;padding:calc(20px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));background:var(--sf);border-right:1px solid var(--bd);z-index:6;transition:transform .25s}
@@ -94,7 +96,7 @@ body.open #ov{opacity:1;pointer-events:auto}
 <header><button id="menu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><div class="logo">didinska<i>.ai</i></div></header>
 <div id="scroll"><div id="chat" class="col"></div></div>
 <footer><div id="chips"></div>
-<form id="form"><button type="button" id="clip" aria-label="Lampirkan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.6l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"/></svg></button><input type="file" id="fi" multiple hidden><textarea id="in" rows="1" placeholder="Tulis pesan atau lampirkan kode…" aria-label="Pesan"></textarea><button id="send" disabled>↑</button></form>
+<form id="form"><button type="button" id="clip" aria-label="Lampirkan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.6l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"/></svg></button><input type="file" id="fi" multiple hidden><textarea id="in" rows="1" placeholder="Tulis pesan…" aria-label="Pesan"></textarea><button id="send" disabled>↑</button></form>
 <small>AI bisa salah. Cek ulang info penting.</small></footer>
 </main></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
