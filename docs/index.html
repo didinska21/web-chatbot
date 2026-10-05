@@ -114,9 +114,9 @@ body.fxon #fx{display:block}body.fxon #scroll,body.fxon main>footer{display:none
 .fxp{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:16px 0 14px}
 .fxp b{font:700 clamp(30px,9vw,44px)/1.1 'Space Mono',monospace;letter-spacing:-.04em}
 #fxch{font-size:13px;color:var(--mu)}#fxch.up{color:var(--up)}#fxch.dn{color:var(--dn)}
-#fxtf{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin-bottom:6px;scrollbar-width:none}#fxtf::-webkit-scrollbar{display:none}
-#fxtf button{flex:none;padding:7px 12px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);font-size:13px;color:var(--mu)}
-#fxtf button:hover{color:var(--tx)}#fxtf button.on{background:var(--g);border-color:transparent;color:var(--on);font-weight:700}
+#fxtf,#nwf{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin-bottom:6px;scrollbar-width:none}#fxtf::-webkit-scrollbar,#nwf::-webkit-scrollbar{display:none}
+#fxtf button,#nwf button{flex:none;padding:7px 12px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);font-size:13px;color:var(--mu)}
+#fxtf button:hover,#nwf button:hover{color:var(--tx)}#fxtf button.on,#nwf button.on{background:var(--g);border-color:transparent;color:var(--on);font-weight:700}
 #fxc{position:relative;height:clamp(260px,48dvh,440px);border-radius:16px;background:var(--sf);border:1px solid var(--bd);overflow:hidden}
 #fxcv{display:block;width:100%;height:100%;touch-action:pan-y;cursor:crosshair}
 .fxtip{display:flex;flex-wrap:wrap;gap:2px 14px;min-height:44px;padding:10px 2px 0;font-size:12px;color:var(--mu)}.fxtip b{color:var(--tx);font-weight:600}
@@ -124,6 +124,21 @@ body.fxon #fx{display:block}body.fxon #scroll,body.fxon main>footer{display:none
 .fxst div{padding:10px 12px;border-radius:14px;background:var(--sf);border:1px solid var(--bd)}.fxst small{display:block;color:var(--mu);font-size:12px}.fxst b{font-size:14px;font-weight:600}
 #fxe{margin-top:14px}#fxe:empty{display:none}
 .fxn{margin-top:16px;color:var(--mu);font-size:12px;line-height:1.6}
+#nw{display:none;flex:1;min-height:0;overflow-y:auto}
+body.nwon #nw{display:block}body.nwon #scroll,body.nwon main>footer{display:none}
+.nwn{margin:16px 0 14px;padding:16px;border-radius:18px;background:var(--sf);border:1px solid color-mix(in srgb,var(--a1) 55%,var(--bd))}
+.nwn>small{display:block;color:var(--mu);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.nwn h3{margin:6px 0 4px;font:700 clamp(16px,4.4vw,19px)/1.3 'Space Mono',monospace}
+.nwn p{color:var(--mu);font-size:13px;line-height:1.55}
+#nwcd{margin-top:10px;font:700 clamp(22px,7vw,30px)/1.2 'Space Mono',monospace;letter-spacing:-.03em}
+.nwg{margin:20px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.nwr{display:grid;grid-template-columns:50px 1fr;gap:12px;padding:12px;margin-bottom:8px;border-radius:14px;background:var(--sf);border:1px solid var(--bd)}
+.nwr.soon{border-color:color-mix(in srgb,var(--a1) 65%,transparent)}.nwr.past{opacity:.5}
+.nwd{text-align:center;line-height:1.15}.nwd b{display:block;font-size:20px}.nwd small{font-size:11px;color:var(--mu)}
+.nwt{font-weight:600;font-size:14px;line-height:1.4}
+.nwm{margin-top:4px;color:var(--mu);font-size:12px;line-height:1.55}.nwm b{color:var(--tx);font-weight:600}
+.nwi{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;vertical-align:1px;color:var(--dn);background:color-mix(in srgb,var(--dn) 15%,transparent)}
+.nwe{padding:26px 8px;text-align:center;color:var(--mu);font-size:13px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media(max-width:760px){
 header{display:flex}
@@ -137,7 +152,7 @@ body.open #ov{opacity:1;pointer-events:auto}
 <body>
 <div id="lock"><form id="lf" autocomplete="off"><div class="logo">didinska<i>.ai</i></div><p>Masukkan PIN untuk masuk</p><input id="pin" type="password" placeholder="••••••" aria-label="PIN"><button>Masuk</button><div id="le"></div></form></div>
 <div id="app">
-<aside id="side"><div class="logo">didinska<i>.ai</i></div><button id="new">+ Obrolan baru</button><button id="navfx" type="button" class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v3M7 17v4M17 2v3M17 14v5"/><rect x="5" y="6" width="4" height="11" rx="1"/><rect x="15" y="5" width="4" height="9" rx="1"/></svg>Grafik XAU/USD</button><div id="list"></div><div id="tools"><select id="model" aria-label="Model"><option value="">Model: bawaan server</option></select><button type="button" id="diag">Diagnosa koneksi</button></div><div id="tp"><div id="themes"></div><small id="tn"></small></div></aside>
+<aside id="side"><div class="logo">didinska<i>.ai</i></div><button id="new">+ Obrolan baru</button><button id="navfx" type="button" class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v3M7 17v4M17 2v3M17 14v5"/><rect x="5" y="6" width="4" height="11" rx="1"/><rect x="15" y="5" width="4" height="9" rx="1"/></svg>Grafik XAU/USD</button><button id="navnw" type="button" class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Jadwal News</button><div id="list"></div><div id="tools"><select id="model" aria-label="Model"><option value="">Model: bawaan server</option></select><button type="button" id="diag">Diagnosa koneksi</button></div><div id="tp"><div id="themes"></div><small id="tn"></small></div></aside>
 <div id="ov"></div>
 <main>
 <header><button id="menu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><div class="logo">didinska<i>.ai</i></div></header>
@@ -150,6 +165,13 @@ body.open #ov{opacity:1;pointer-events:auto}
 <div id="fxtip" class="fxtip"></div>
 <div class="fxst"><div><small>Tertinggi</small><b id="fxhi">—</b></div><div><small>Terendah</small><b id="fxlo">—</b></div><div><small>Pembukaan</small><b id="fxop">—</b></div></div>
 <p class="fxn" id="fxn"></p>
+</div></section>
+<section id="nw" aria-label="Jadwal news high impact"><div class="fxw">
+<div class="fxh"><div><h2>Jadwal News</h2><small>Event high impact sampai Desember 2026</small></div><div class="fxs"><span>Waktu dalam WIB</span></div></div>
+<div id="nwn" class="nwn"></div>
+<div id="nwf" role="group" aria-label="Filter jenis event"></div>
+<div id="nwl"></div>
+<p class="fxn" id="nwnote"></p>
 </div></section>
 <div id="scroll"><div id="chat" class="col"></div></div>
 <footer><div id="chips"></div>
@@ -240,9 +262,9 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 function renderList(){
  $('#list').innerHTML='';
  chats.forEach(c=>{
-  const b=document.createElement('button');b.className='item'+(c===cur&&!document.body.classList.contains('fxon')?' on':'');
+  const b=document.createElement('button');b.className='item'+(c===cur&&!/\b(fxon|nwon)\b/.test(document.body.className)?' on':'');
   b.innerHTML='<span>'+esc(c.title)+'</span><span class="x" role="button" aria-label="Hapus">✕</span>';
-  b.onclick=e=>{if(e.target.classList.contains('x')){chats=chats.filter(x=>x!==c);gone[c.id]=Date.now();if(cur===c)cur=null;save();renderList();renderChat()}else{fxClose();cur=c;renderList();renderChat();document.body.classList.remove('open')}};
+  b.onclick=e=>{if(e.target.classList.contains('x')){chats=chats.filter(x=>x!==c);gone[c.id]=Date.now();if(cur===c)cur=null;save();renderList();renderChat()}else{fxClose();nwClose();cur=c;renderList();renderChat();document.body.classList.remove('open')}};
   $('#list').appendChild(b);
  });
 }
@@ -352,7 +374,7 @@ function fit(){const t=$('#in');t.style.height='auto';t.style.height=t.scrollHei
 $('#in').addEventListener('input',fit);
 $('#in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!matchMedia('(max-width:760px)').matches){e.preventDefault();$('#form').requestSubmit()}});
 $('#form').onsubmit=e=>{e.preventDefault();if(busy){ctl&&ctl.abort();return}send($('#in').value)};
-$('#new').onclick=()=>{fxClose();cur=null;renderList();renderChat();document.body.classList.remove('open');$('#in').focus()};
+$('#new').onclick=()=>{fxClose();nwClose();cur=null;renderList();renderChat();document.body.classList.remove('open');$('#in').focus()};
 $('#menu').onclick=()=>document.body.classList.toggle('open');
 $('#ov').onclick=()=>document.body.classList.remove('open');
 const THEMES=[['graphite','Graphite','#1F232A','#60DAFB'],['aurora','Aurora','#0B0D11','#60DAFB'],['porcelain','Porcelain','#FFFFFF','#1F232A'],['glacier','Glacier','#DDF4FC','#60DAFB']];
@@ -424,7 +446,7 @@ async function fxLoad(){
  }
 }
 function fxPoll(){clearInterval(FX.timer);FX.timer=setInterval(()=>{if(!document.hidden)fxLoad()},60000)}
-function fxOpen(){document.body.classList.add('fxon');$('#navfx').classList.add('on');document.body.classList.remove('open');renderList();fxSync();fxRender();fxLoad();fxPoll()}
+function fxOpen(){nwClose();document.body.classList.add('fxon');$('#navfx').classList.add('on');document.body.classList.remove('open');renderList();fxSync();fxRender();fxLoad();fxPoll()}
 function fxClose(){if(!document.body.classList.contains('fxon'))return;document.body.classList.remove('fxon');$('#navfx').classList.remove('on');clearInterval(FX.timer);clearTimeout(FX.deb);FX.seq++}
 $('#navfx').onclick=()=>{if(document.body.classList.contains('fxon')){document.body.classList.remove('open');return}fxOpen()};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('fxon')&&Date.now()-FX.at>45000)fxLoad()});
@@ -491,6 +513,63 @@ function fxDraw(){
  let raf=0;new ResizeObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(document.body.classList.contains('fxon'))fxRender()})}).observe($('#fxc'));
  new MutationObserver(()=>{if(document.body.classList.contains('fxon'))fxDraw()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 })();
+// ===== Jadwal news high impact (data statis, dicek ke situs resmi pada 6 Okt 2026) =====
+// Sumber: The Fed (FOMC), BLS (NFP, CPI), BEA (Core PCE, PDB), ECB, BoE, BoJ. Tanggal bisa bergeser (libur, government shutdown).
+// Format: [tanggal lokal, jam lokal, zona, jenis, negara, judul, keterangan, jam perkiraan?]
+const NWZ={ET:['America/New_York','ET'],CET:['Europe/Berlin','CET'],UK:['Europe/London','London'],JST:['Asia/Tokyo','Tokyo']};
+const NWC={fed:'The Fed',us:'Data AS',cb:'Bank sentral lain'};
+const NWV=[
+['2026-10-07','14:00','ET','fed','US','Risalah rapat FOMC (rapat September)','Notulen rapat 15-16 Sep. Dibaca pasar untuk menebak arah suku bunga berikutnya.'],
+['2026-10-14','08:30','ET','us','US','CPI AS (inflasi September)','Inflasi konsumen. Salah satu data yang paling menggerakkan dolar dan emas.'],
+['2026-10-28','14:00','ET','fed','US','FOMC: keputusan suku bunga','Rapat 27-28 Okt. Konferensi pers Ketua The Fed 14:30 ET.'],
+['2026-10-29','08:30','ET','us','US','PDB AS kuartal III (estimasi awal)','Pertumbuhan ekonomi AS. Rilis bersamaan dengan Core PCE.'],
+['2026-10-29','08:30','ET','us','US','Core PCE AS (September)','Ukuran inflasi yang paling diperhatikan The Fed.'],
+['2026-10-29','14:15','CET','cb','EU','ECB: keputusan suku bunga','Konferensi pers Lagarde sekitar 14:45 CET.'],
+['2026-10-30','12:00','JST','cb','JP','BoJ: keputusan suku bunga + Outlook Report','Jam rilis tidak tetap, biasanya sekitar tengah hari waktu Tokyo.',1],
+['2026-11-05','12:00','UK','cb','UK','BoE: keputusan suku bunga + Monetary Policy Report','Konferensi pers Gubernur BoE menyusul setelah rilis.'],
+['2026-11-06','08:30','ET','us','US','NFP (Non-Farm Payrolls) Oktober','Laporan tenaga kerja AS: tambahan lapangan kerja dan tingkat pengangguran.'],
+['2026-11-10','08:30','ET','us','US','CPI AS (inflasi Oktober)','Inflasi konsumen.'],
+['2026-11-18','14:00','ET','fed','US','Risalah rapat FOMC (rapat Oktober)','Notulen rapat 27-28 Okt.'],
+['2026-11-25','08:30','ET','us','US','Core PCE AS (Oktober)','Ukuran inflasi pilihan The Fed.'],
+['2026-12-04','08:30','ET','us','US','NFP (Non-Farm Payrolls) November','Laporan tenaga kerja AS.'],
+['2026-12-09','14:00','ET','fed','US','FOMC: keputusan suku bunga + proyeksi (SEP)','Rapat 8-9 Des, rapat terakhir tahun ini. Konferensi pers 14:30 ET.'],
+['2026-12-10','08:30','ET','us','US','CPI AS (inflasi November)','Inflasi konsumen.'],
+['2026-12-17','14:15','CET','cb','EU','ECB: keputusan suku bunga','Rapat terakhir tahun ini. Konferensi pers sekitar 14:45 CET.'],
+['2026-12-17','12:00','UK','cb','UK','BoE: keputusan suku bunga','Pengumuman 12:00 waktu London.'],
+['2026-12-18','12:00','JST','cb','JP','BoJ: keputusan suku bunga','Jam rilis tidak tetap, biasanya sekitar tengah hari waktu Tokyo.',1],
+['2026-12-23','08:30','ET','us','US','Core PCE AS (November)','Ukuran inflasi pilihan The Fed.'],
+['2026-12-30','14:00','ET','fed','US','Risalah rapat FOMC (rapat Desember)','Notulen rapat 8-9 Des.']
+];
+const NWD=['Min','Sen','Sel','Rab','Kam','Jum','Sab'],NWM=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],NWMF=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function nwWall(u,z){const o={};new Intl.DateTimeFormat('en-GB',{timeZone:z,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(u)).forEach(x=>o[x.type]=x.value);return Date.UTC(+o.year,o.month-1,+o.day,+o.hour,+o.minute)}
+function nwUtc(d,t,z){const [y,m,dd]=d.split('-').map(Number),[h,mi]=t.split(':').map(Number),want=Date.UTC(y,m-1,dd,h,mi);let u=want;for(let i=0;i<3;i++)u+=want-nwWall(u,z);return u}
+const NW=NWV.map(([d,t,z,k,c,n,s,ap])=>{const u=nwUtc(d,t,NWZ[z][0]);return{u,wib:u+7*36e5,d,t,z,k,c,n,s,ap:!!ap}}).sort((a,b)=>a.u-b.u);
+const nwDt=w=>{const x=new Date(w);return{d:x.getUTCDate(),dow:NWD[x.getUTCDay()],mo:NWM[x.getUTCMonth()],mf:NWMF[x.getUTCMonth()]+' '+x.getUTCFullYear(),hm:String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0'),key:x.getUTCFullYear()*100+x.getUTCMonth()}};
+let NWS={f:['all','fed','us','cb'].includes(ls.get('nwf',''))?ls.get('nwf',''):'all',tick:0,at:0};
+[['all','Semua'],['fed',NWC.fed],['us',NWC.us],['cb',NWC.cb]].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{NWS.f=k;ls.set('nwf',k);nwRender()};$('#nwf').appendChild(b)});
+function nwList(){const now=fxNow().ms,day0=Math.floor(now/864e5)*864e5;return NW.filter(e=>(NWS.f==='all'||e.k===NWS.f)&&e.wib>=day0).map(e=>({...e,past:e.wib<now,soon:e.wib>=now&&e.wib-now<864e5}))}
+function nwRender(){
+ document.querySelectorAll('#nwf button').forEach(b=>{const on=b.dataset.k===NWS.f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+ const L=nwList(),nx=L.find(e=>!e.past),box=$('#nwn');
+ const loc=e=>{const z=NWZ[e.z],ld=e.d.split('-'),w=nwDt(e.wib),same=+ld[2]===w.d;return e.t+' '+z[1]+(same?'':' ('+(+ld[2])+' '+NWM[+ld[1]-1]+')')};
+ if(nx){const w=nwDt(nx.wib);box.hidden=false;box.innerHTML='<small>Berikutnya</small><h3>'+esc(nx.n)+'</h3><p>'+w.dow+', '+w.d+' '+w.mo+' · '+(nx.ap?'sekitar ':'')+'<b>'+w.hm+' WIB</b></p><div id="nwcd" aria-hidden="true">—</div>'}
+ else{box.hidden=!L.length&&NWS.f==='all'?false:true;box.innerHTML=L.length||NWS.f!=='all'?'':'<small>Berikutnya</small><h3>Tidak ada jadwal mendatang</h3><p>Semua event di daftar sudah lewat. Perbarui daftar NWV di index.html.</p>';if(!L.length&&NWS.f!=='all')box.hidden=true}
+ let h='',g=0;
+ L.forEach(e=>{const w=nwDt(e.wib);if(w.key!==g){g=w.key;h+='<div class="nwg">'+w.mf+'</div>'}
+  h+='<article class="nwr'+(e.past?' past':'')+(e.soon?' soon':'')+'"><div class="nwd"><b>'+w.d+'</b><small>'+w.dow+'</small></div><div><div class="nwt">'+esc(e.n)+'<span class="nwi">HIGH</span></div><div class="nwm"><b>'+(e.ap?'± ':'')+w.hm+' WIB</b> · '+esc(e.c)+' · '+esc(loc(e))+(e.ap?' · jam perkiraan':'')+(e.past?' · sudah lewat':'')+'</div><div class="nwm">'+esc(e.s)+'</div></div></article>'});
+ $('#nwl').innerHTML=h||(NWS.f==='all'?'':'<div class="nwe">Tidak ada event untuk filter ini.</div>');
+ $('#nwnote').textContent='Jadwal diambil dari situs resmi The Fed, BLS, BEA, ECB, BoE, dan BoJ (dicek 6 Okt 2026). Tanggal dan jam bisa bergeser karena libur atau penutupan pemerintah AS, jadi cek ulang di situs resminya sebelum bertransaksi. Daftar ini hanya event high impact utama, belum mencakup semua rilis data, dan tidak memuat angka forecast atau hasil. Bukan saran investasi.';
+ NWS.at=Date.now();nwTick();
+}
+function nwTick(){
+ const el=$('#nwcd');if(!el)return;const nx=nwList().find(e=>!e.past);if(!nx)return;
+ const s=Math.max(0,Math.floor((nx.wib-fxNow().ms)/1000)),d=Math.floor(s/86400),p=n=>String(n).padStart(2,'0');
+ el.textContent=(d?d+' hari ':'')+p(Math.floor(s%86400/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60);
+ if(s===0)setTimeout(nwRender,1500);
+}
+function nwOpen(){fxClose();document.body.classList.add('nwon');$('#navnw').classList.add('on');document.body.classList.remove('open');renderList();nwRender();clearInterval(NWS.tick);NWS.tick=setInterval(()=>{if(!document.hidden){if(Date.now()-NWS.at>6e4)nwRender();else nwTick()}},1000)}
+function nwClose(){if(!document.body.classList.contains('nwon'))return;document.body.classList.remove('nwon');$('#navnw').classList.remove('on');clearInterval(NWS.tick)}
+$('#navnw').onclick=()=>{if(document.body.classList.contains('nwon')){document.body.classList.remove('open');return}nwOpen()};
 fillModels([],'');
 fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sync();loadModels()}}).catch(e=>console.warn('[session] tidak bisa menghubungi Worker',e));
 renderList();renderChat();
