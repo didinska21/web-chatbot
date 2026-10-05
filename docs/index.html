@@ -60,9 +60,15 @@ header{display:none;align-items:center;gap:12px;padding:calc(10px + env(safe-are
 .empty{min-height:100%;display:flex;flex-direction:column;justify-content:center;text-align:center;padding-bottom:6vh}
 .empty h1{font:700 clamp(22px,5vw,34px)/1.25 'Space Mono',monospace;letter-spacing:-.03em}
 .empty p{color:var(--mu);margin:10px 0 26px}
-.sugs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;text-align:left}
-.sug{padding:14px 16px;border-radius:16px;background:var(--sf);border:1px solid var(--bd);transition:transform .15s,border-color .15s}
-.sug:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--a1) 55%,transparent)}.sug b{display:block;font-weight:600}.sug small{color:var(--mu);font-size:13px}
+.sugs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;text-align:left}
+.sug{padding:14px 16px;border-radius:16px;background:var(--sf);border:1px solid var(--bd);text-align:center;cursor:default;-webkit-user-select:none;user-select:none;transition:transform .45s cubic-bezier(.2,.7,.2,1),border-color .45s,box-shadow .45s}
+.sug.on{transform:translateY(-3px);border-color:color-mix(in srgb,var(--a1) 60%,transparent);box-shadow:0 10px 28px color-mix(in srgb,var(--a1) 20%,transparent)}
+.sug b{display:block;font-weight:600}.sug small{display:block;color:var(--mu);font-size:13px}
+.sug .h{visibility:hidden}
+.sug .tc{display:none;position:relative;width:0;height:1.05em;vertical-align:-.15em}
+.sug.on .tc{display:inline-block}
+.sug .tc::after{content:"";position:absolute;left:1px;top:0;width:2px;height:100%;border-radius:1px;background:var(--a1);animation:bl 1s steps(2) infinite}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 footer{width:100%;max-width:812px;margin:0 auto;padding:8px 14px calc(10px + env(safe-area-inset-bottom))}
 #chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .chip{padding:4px 11px;border-radius:99px;background:var(--sf2);border:1px solid var(--bd);font-size:13px;cursor:pointer}
@@ -126,7 +132,7 @@ const auth=()=>{const t=ls.get('tok',null);return t?{Authorization:'Bearer '+t}:
 let chats=ls.get('chats',[]),gone=ls.get('gone',{}),cur=null,busy=false,ctl=null,files=[],st;
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 chats.forEach(c=>{if(!c.id){c.id=uid();c.ts=Date.now()}});
-const SUG=[["Buat skrip","Buatkan skrip Python untuk rename banyak file sekaligus"],["Cari bug","Cari bug di kode yang akan saya lampirkan"],["Jelaskan kode","Jelaskan cara kerja kode yang saya lampirkan"],["Buat proyek","Buatkan proyek Node.js dengan Express lengkap dengan semua filenya"]];
+const SUG=[["Buat skrip","Minta skrip Python, Node.js, atau MQL5. Kodenya lengkap dan siap dijalankan."],["Cari bug","Lampirkan file kode, lalu saya cari letak bug-nya dan beri perbaikannya."],["Jelaskan kode","Tempel atau lampirkan kode, saya jelaskan cara kerjanya dengan bahasa yang mudah."],["Buat proyek","Satu permintaan jadi proyek utuh, semua filenya bisa diunduh sebagai .zip."]];
 const SYS='Kamu asisten coding. Jawab dalam bahasa Indonesia, ringkas dan teknis. Berikan kode lengkap yang siap dijalankan, jangan dipotong dengan tanda titik-titik. Tulis setiap file dalam blok kode terpisah dengan format ```bahasa:namafile.ext (contoh ```python:bot.py atau ```mq5:EA.mq5). Jika ada file terlampir, rujuk namanya.';
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const EXT={python:'py',py:'py',javascript:'js',js:'js',node:'js',nodejs:'js',typescript:'ts',ts:'ts',mq5:'mq5',mql5:'mq5',mq4:'mq4',mql4:'mq4',cpp:'cpp','c++':'cpp',c:'c',cs:'cs',csharp:'cs',java:'java',go:'go',rust:'rs',php:'php',json:'json',html:'html',css:'css',bash:'sh',sh:'sh',sql:'sql',yaml:'yml',yml:'yml',markdown:'md',md:'md',text:'txt',txt:'txt',env:'env',ini:'ini'};
@@ -203,12 +209,35 @@ function renderList(){
   $('#list').appendChild(b);
  });
 }
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let tyTok=0;
+async function typeLoop(cards){
+ const tok=++tyTok,alive=()=>tok===tyTok&&cards[0].isConnected;
+ const T=cards.map(c=>c.querySelector('.t')),H=cards.map(c=>c.querySelector('.h')),full=SUG.map(x=>x[1]);
+ const set=(i,n)=>{T[i].textContent=full[i].slice(0,n);H[i].textContent=full[i].slice(n)};
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches){full.forEach((x,i)=>set(i,x.length));return}
+ await sleep(600);
+ while(alive()){
+  for(let i=0;i<cards.length;i++){
+   if(!alive())return;
+   cards[i].classList.add('on');
+   for(let n=1;n<=full[i].length;n++){set(i,n);await sleep(/[,.]/.test(full[i][n-1])?170:24+Math.random()*26);if(!alive())return}
+   await sleep(350);cards[i].classList.remove('on');
+  }
+  await sleep(2600);
+  let left=full.map(x=>x.length);
+  while(left.some(x=>x>0)){left=left.map((x,i)=>{const v=Math.max(0,x-3);set(i,v);return v});await sleep(18);if(!alive())return}
+  await sleep(500);
+ }
+}
 function renderChat(){
  const el=$('#chat');el.innerHTML='';
  if(!cur||!cur.msgs.length){
   el.className='col empty';
   el.innerHTML='<h1>Mau bikin kode apa hari ini?</h1><p>Tulis permintaan atau lampirkan kode. Obrolanmu tersimpan di perangkat ini.</p><div class="sugs"></div>';
-  SUG.forEach(([a,q])=>{const b=document.createElement('button');b.className='sug';b.innerHTML='<b>'+esc(a)+'</b><small>'+esc(q)+'</small>';b.onclick=()=>send(q);el.lastChild.appendChild(b)});
+  const box=el.lastChild;box.setAttribute('role','list');
+  SUG.forEach(([a,q])=>{const d=document.createElement('div');d.className='sug';d.setAttribute('role','listitem');d.innerHTML='<b>'+esc(a)+'</b><span class="sr">'+esc(q)+'</span><small aria-hidden="true"><span class="t"></span><i class="tc"></i><span class="h">'+esc(q)+'</span></small>';box.appendChild(d)});
+  typeLoop([...box.children]);
   return;
  }
  el.className='col';
