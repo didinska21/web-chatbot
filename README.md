@@ -45,6 +45,24 @@ web-chatbot/
 ## Mengganti alamat Worker
 Kalau alamat Worker berubah, ubah konstanta `API` di `docs/index.html`.
 
+## Log dan diagnosa
+
+- **Log Worker:** Cloudflare → Workers & Pages → `web-chatbot` → Logs (atau `npx wrangler tail`). Satu baris JSON per kejadian. Cari `"lvl":"error"` atau `"lvl":"warn"`. Key, PIN, dan isi obrolan tidak pernah dicatat.
+- **Di web:** tombol **Diagnosa koneksi** di sidebar memeriksa Secret, KV, ALLOWED_ORIGINS, dan koneksi ke provider satu per satu.
+- **Error di chat** menampilkan sumber, kode, dan `ref`. `ref` sama dengan `rid` di log Worker.
+
+| Sumber | Kode | Artinya dan solusi |
+|---|---|---|
+| Sesi / PIN | `pin_wrong` | PIN salah |
+| Sesi / PIN | `session_invalid` | Sesi habis, masukkan PIN lagi |
+| Konfigurasi Worker | `config_missing`, `config_invalid` | Secret belum diisi atau API_URL bukan URL valid (nama Secret disebut di pesan) |
+| Konfigurasi Worker | `kv_missing` | KV `CHATS` belum terpasang, deploy ulang |
+| Provider API | `upstream_error` | Provider menolak (lihat angka `provider:` 401/403/404/429/5xx dan sarannya) |
+| Provider API | `upstream_unreachable`, `upstream_timeout` | API_URL salah ketik, atau provider down/lambat |
+| Provider API | `upstream_stream_error`, `upstream_body_error` | Provider mengirim error di dalam balasan |
+| Jaringan / CORS | `network` | Internet putus, alamat Worker di index.html salah, atau domain belum ada di ALLOWED_ORIGINS |
+| Worker | `internal`, `kv_error`, `not_found` | Bug atau gangguan di Worker, cari `ref` di log |
+
 ## Keamanan
 - Jangan menaruh API key di `index.html`.
 - Pasang rate limiting untuk path `/api/login` (Security → WAF → Rate limiting rules), misalnya 5 percobaan per menit per IP.
