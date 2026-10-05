@@ -12,7 +12,7 @@ Website chat AI untuk coding, dengan API custom.
 web-chatbot/
 ├── wrangler.jsonc      Konfigurasi Worker
 ├── src/
-│   └── worker.js       /api/login, /api/session, /api/chat (CORS + token)
+│   └── worker.js       /api/login, /api/session, /api/chat, /api/forex (CORS + token)
 └── docs/
     ├── index.html      Tampilan chat (dilayani GitHub Pages)
     └── CNAME           didinska.my.id
@@ -32,6 +32,7 @@ web-chatbot/
 | `API_URL` | Endpoint API AI, misalnya `https://api.groq.com/openai/v1/chat/completions` |
 | `API_KEY` | API key |
 | `MODEL` | Nama model, misalnya `openai/gpt-oss-120b` |
+| `TWELVEDATA_KEY` | API key Twelve Data untuk menu Grafik XAU/USD (opsional, hanya dipakai Worker) |
 | `ALLOWED_ORIGINS` | Opsional. Daftar domain frontend, pisahkan koma. Default: `https://didinska.my.id,https://www.didinska.my.id` |
 
 ### 2. Tampilan (GitHub Pages)
