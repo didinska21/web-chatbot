@@ -168,6 +168,25 @@ body.nwon #nw{display:block}body.nwon #scroll,body.nwon main>footer{display:none
 .fxab{font-size:14px;line-height:1.7}
 .fxact{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .sec{padding:8px 12px;border-radius:10px;border:1px solid var(--bd);background:transparent;color:var(--tx);font-size:13px}.sec:hover{border-color:var(--a1)}
+.fxstl{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 6px}
+.fxstl button{padding:5px 12px;border-radius:99px;background:transparent;border:1px solid var(--bd);font-size:12px;color:var(--mu)}
+.fxstl button:hover{color:var(--tx)}.fxstl button.on{border-color:var(--a1);color:var(--tx);background:color-mix(in srgb,var(--a1) 14%,transparent)}
+#fxsti{display:block;color:var(--mu);font-size:11px;line-height:1.5}
+.fxevp{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid color-mix(in srgb,#E8A33D 55%,transparent);background:color-mix(in srgb,#E8A33D 10%,transparent);font-size:13px}
+.fxevp summary{cursor:pointer;font-weight:600;line-height:1.5}
+.fxevf{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 6px}
+.fxevf label{display:block;color:var(--mu);font-size:11px}
+.fxevf input{display:block;width:100%;margin-top:4px;padding:8px 10px;border-radius:9px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font:inherit;font-size:13px;outline:none}.fxevf input:focus{border-color:var(--a1)}
+.fxsum{margin:8px 0 12px;padding:12px;border-radius:14px;background:var(--sf2);border:1px solid var(--bd)}
+.fxsr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:var(--mu);line-height:1.5}.fxsr+.fxsr{margin-top:8px}.fxsr b{color:var(--tx);font-weight:600}
+.bdg{display:inline-block;padding:2px 9px;border-radius:7px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--mu);background:color-mix(in srgb,var(--tx) 10%,transparent)}
+.bdg.naik{color:var(--up);background:color-mix(in srgb,var(--up) 16%,transparent)}.bdg.turun{color:var(--dn);background:color-mix(in srgb,var(--dn) 16%,transparent)}
+.al{padding:2px 8px;border-radius:7px;font-size:11px;border:1px solid var(--bd)}.al.naik{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,transparent)}.al.turun{color:var(--dn);border-color:color-mix(in srgb,var(--dn) 45%,transparent)}
+.fxdt{margin-top:10px;font-size:12px;color:var(--mu)}.fxdt summary{cursor:pointer}.fxdt pre{margin-top:8px;padding:10px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd);white-space:pre-wrap;word-break:break-word;font:11px/1.55 'Space Mono',monospace;color:var(--tx);max-height:260px;overflow:auto}
+.fxhd summary{cursor:pointer;font:700 15px/1.3 'Space Mono',monospace}.fxhd>small{display:block;margin-top:8px}
+#fxhl{margin-top:10px}.hi{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:9px 0;border-top:1px solid var(--bd);font-size:12px}.hi .hm{flex:1;min-width:150px;color:var(--mu)}
+.hi .st{padding:2px 8px;border-radius:7px;font-size:11px;background:color-mix(in srgb,var(--tx) 8%,transparent);color:var(--mu)}.hi .st.hit{color:var(--up);background:color-mix(in srgb,var(--up) 15%,transparent)}.hi .st.miss{color:var(--dn);background:color-mix(in srgb,var(--dn) 15%,transparent)}
+.fxhn{display:block;margin-top:10px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media(max-width:760px){
 header{display:flex}
@@ -208,9 +227,17 @@ body.open #ov{opacity:1;pointer-events:auto}
 <div id="fxal" class="fxal"></div><small id="fxan"></small> <small id="fxam2"></small>
 </div>
 <div class="fxsec fxai">
-<div class="fxaih"><div><h3>Analisa AI</h3><small>Dari data chart yang sedang tampil</small></div><button id="fxab" type="button" class="pri">Analisa</button></div>
+<div class="fxaih"><div><h3>Analisa AI</h3><small>Multi-rentang waktu, hasil terstruktur</small></div><button id="fxab" type="button" class="pri">Analisa</button></div>
+<div id="fxstl" class="fxstl" role="group" aria-label="Gaya trading"></div><small id="fxsti"></small>
+<details id="fxevp" class="fxevp" hidden></details>
 <div id="fxar"></div>
 </div>
+<details class="fxsec fxhd" id="fxhd"><summary id="fxhsum">Riwayat dan akurasi</summary>
+<small id="fxhs"></small>
+<div id="fxhl"></div>
+<div class="fxact"><button id="fxhc" type="button" class="sec" hidden>Hapus riwayat</button></div>
+<small class="fxhn">Penilaian otomatis memakai candle 1 jam. Skenario naik atau turun dianggap tercapai jika target pertama tersentuh sebelum level invalidasi dalam jangka penilaian. Skenario netral dianggap benar jika harga tetap di antara support dan resistance terdekat. Jika AI tidak memberi target atau invalidasi, dipakai 1,5× dan 1× ATR. Riwayat hanya tersimpan di perangkat ini.</small>
+</details>
 <p class="fxn" id="fxn"></p>
 </div></section>
 <section id="nw" aria-label="Jadwal news high impact"><div class="fxw">
@@ -472,9 +499,8 @@ $('#dgx').onclick=()=>$('#dg').classList.remove('on');
 const FXTF=[['1min','1 mnt',1],['5min','5 mnt',5],['15min','15 mnt',15],['1h','1 jam',60],['4h','4 jam',240],['1day','1 hari',1440]];
 const FXPAD={l:6,r:66,t:10,b:24};
 const FXS=[['Asia','Asia/Tokyo',9,18,'#E8A33D'],['London','Europe/London',8,17,'#38BDF8'],['New York','America/New_York',8,17,'#A78BFA']];
-const FXSYS='Kamu analis teknikal pasar emas (XAU/USD). Jawab dalam bahasa Indonesia, ringkas (maksimal sekitar 250 kata), format markdown dengan judul tebal. Aturan: (1) hanya pakai angka dan fakta dari data yang diberikan, jangan mengarang harga, berita, atau data lain; (2) jangan memberi perintah beli atau jual dan jangan menjamin hasil, tulis skenario bersyarat (jika harga menembus atau bertahan di level tertentu, maka ...); (3) sebut batasan bahwa analisa hanya dari satu rentang waktu dan satu sumber data; (4) jika data tertunda atau pasar tutup, katakan di awal; (5) jika ada event high impact dalam 48 jam, sebut sebagai risiko. Susunan: **Ringkasan** (1-2 kalimat), **Tren dan momentum**, **Level penting**, **Skenario** (naik dan turun), **Risiko**.';
 const FXI=ls.get('fxind',{});
-const FX={tf:FXTF.some(x=>x[0]===ls.get('fxtf',''))?ls.get('fxtf',''):'5min',data:null,vis:[],off:0,calc:null,sc:new Map(),ind:{ema:!!FXI.ema,rsi:!!FXI.rsi,ses:!!FXI.ses},sel:-1,seq:0,loading:0,nextAt:0,lastReq:0,deb:0,at:0,left:null,paused:'',ai:null,aiCtl:null,ac:null,tt:0};
+const FX={tf:FXTF.some(x=>x[0]===ls.get('fxtf',''))?ls.get('fxtf',''):'5min',data:null,vis:[],off:0,calc:null,sc:new Map(),ind:{ema:!!FXI.ema,rsi:!!FXI.rsi,ses:!!FXI.ses,lv:FXI.lv!==false},sel:-1,seq:0,loading:0,nextAt:0,lastReq:0,deb:0,at:0,left:null,paused:'',ai:null,aiCtl:null,ac:null,tt:0,lv:null,evAt:0,style:['scalp','intra','swing'].includes(ls.get('fxst',''))?ls.get('fxst',''):'intra'};
 const FXA={list:ls.get('fxal',[])};
 const p2=n=>String(n).padStart(2,'0');
 const fxNum=(v,d=2)=>Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -518,19 +544,15 @@ const fxPaused=()=>fxQ().n>=780||(FX.left!=null&&FX.left<=20);
 
 // --- UI dasar ---
 FXTF.forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{if(FX.tf===k)return;FX.tf=k;ls.set('fxtf',k);FX.data=null;FX.sel=-1;FX.nextAt=Date.now()+400;fxSync();fxRender();clearTimeout(FX.deb);FX.deb=setTimeout(fxLoad,250)};$('#fxtf').appendChild(b)});
-[['ema','EMA 20/50'],['rsi','RSI 14'],['ses','Sesi pasar']].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{FX.ind[k]=!FX.ind[k];ls.set('fxind',FX.ind);fxSync();fxRender()};$('#fxind').appendChild(b)});
-function fxSync(){
+[['ema','EMA 20/50'],['rsi','RSI 14'],['ses','Sesi pasar'],['lv','Level AI']].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{FX.ind[k]=!FX.ind[k];ls.set('fxind',FX.ind);fxSync();fxRender()};$('#fxind').appendChild(b)});
+function fxSync(){fxStyleSync();
  document.querySelectorAll('#fxtf button').forEach(b=>{const on=b.dataset.k===FX.tf;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
  document.querySelectorAll('#fxind button').forEach(b=>{const on=!!FX.ind[b.dataset.k];b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
 }
 async function fxLoad(){
  const my=++FX.seq;FX.loading=my;FX.lastReq=Date.now();fxCd();
  try{
-  const r=await fetch(API+'/api/forex?symbol=XAU/USD&interval='+FX.tf,{headers:auth()});
-  if(!r.ok){const e=await readErr(r);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
-  const j=await r.json();if(my!==FX.seq)return;
-  if(!j||!Array.isArray(j.values)||!j.values.length)throw new ApiErr({code:'client_bad_data',source:'client',message:'Data grafik kosong atau formatnya tidak dikenali.',hint:'Pasar mungkin tutup. Coba rentang lain.'});
-  const q=fxQ();if(!j.cached)q.n++;ls.set('fxq',q);FX.left=j.credits&&j.credits.left!=null?j.credits.left:null;
+  const j=await fxFetchTf(FX.tf);if(my!==FX.seq)return;
   FX.data=j;FX.at=Date.now();FX.nextAt=Date.now()+60000;$('#fxe').innerHTML='';fxRender();fxAlCheck();
  }catch(e){
   if(my!==FX.seq)return;
@@ -549,7 +571,7 @@ function fxTick(){
  if(document.hidden||(!on&&!FXA.list.length))return;
  const mk=fxMarket();FX.paused=!mk.open?'market':fxPaused()?'quota':'';
  if(!FX.loading&&Date.now()>=FX.nextAt&&(!FX.paused||!FX.data))fxLoad();
- if(on){fxCd(mk);fxWarn()}
+ if(on){fxCd(mk);fxWarn();fxEvRender();if(Date.now()-FX.evAt>6e5)fxEval()}
 }
 setInterval(fxTick,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)fxTick()});
@@ -605,6 +627,7 @@ function fxLegend(){
  const el=$('#fxleg');let h='';
  if(FX.ind.ema)h+='<span><i style="background:#F472B6"></i>EMA 20</span><span><i style="background:var(--tx)"></i>EMA 50</span>';
  if(FX.ind.ses)h+=FX.tf==='1day'?'<span>Sesi pasar hanya tampil di rentang di bawah 1 hari.</span>':fxSessTxt().map(s=>'<span><i style="background:'+s.c+'"></i>'+s.n+' '+s.t+' WIB</span>').join('');
+ if(FX.ind.lv&&FX.lv)h+='<span><i style="background:var(--dn)"></i>R</span><span><i style="background:var(--up)"></i>S</span><span><i style="background:#E8A33D"></i>Invalidasi</span><span>level AI '+esc(FX.lv.at||'')+' WIB</span>';
  if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}el.hidden=!h;
 }
 function fxTip(){
@@ -630,6 +653,7 @@ function fxDraw(){
  const {l:pl,r:pr,b:pb}=FXPAD,pt=ses?20:FXPAD.t,pw=W-pl-pr,ph=H-pt-pb,n=v.length,cw=pw/n;
  let lo=Math.min(...v.map(x=>x.l)),hi=Math.max(...v.map(x=>x.h));
  if(FX.ind.ema)for(let i=0;i<n;i++)[k.e20,k.e50].forEach(a=>{const e=a&&a[off+i];if(e!=null){if(e<lo)lo=e;if(e>hi)hi=e}});
+ const LV=FX.ind.lv&&FX.lv?fxLvItems():[],far=(k.atr||v[n-1].c*.002)*6;LV.forEach(([p])=>{if(Math.abs(p-v[n-1].c)<=far){if(p<lo)lo=p;if(p>hi)hi=p}});
  const pad=(hi-lo)*.08||1;lo-=pad;hi+=pad;
  const y=p=>pt+(hi-p)/(hi-lo)*ph,x=i=>pl+(i+.5)*cw,lyy=y(v[n-1].c);
  g.textBaseline='middle';g.textAlign='left';
@@ -640,6 +664,7 @@ function fxDraw(){
  const bw=Math.max(1,Math.floor(cw*.66));
  v.forEach((c,i)=>{const up=c.c>=c.o,kc=up?UP:DN,cx=Math.round(x(i))+.5;g.strokeStyle=kc;g.fillStyle=kc;g.lineWidth=1;g.beginPath();g.moveTo(cx,y(c.h));g.lineTo(cx,y(c.l));g.stroke();g.fillRect(Math.round(x(i)-bw/2),y(Math.max(c.o,c.c)),bw,Math.max(1,Math.abs(y(c.o)-y(c.c))))});
  if(FX.ind.ema)[[k.e20,'#F472B6'],[k.e50,tx]].forEach(([a,c])=>{if(!a)return;g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();let st=false;for(let i=0;i<n;i++){const e=a[off+i];if(e==null)continue;if(!st){g.moveTo(x(i),y(e));st=true}else g.lineTo(x(i),y(e))}g.stroke()});
+ LV.forEach(([p,lb,ty])=>{if(p<lo||p>hi)return;const yy=y(p),cc=ty===0?DN:ty===1?UP:ty===3?'#E8A33D':(lb==='T↑'?UP:DN);g.save();g.setLineDash(ty===3?[8,4]:ty===2?[2,3]:[6,4]);g.strokeStyle=cc;g.lineWidth=ty===3?1.6:1;g.globalAlpha=ty===2?.75:.9;g.beginPath();g.moveTo(pl,Math.round(yy)+.5);g.lineTo(pl+pw,Math.round(yy)+.5);g.stroke();g.restore();const tt=lb+' '+fxNum(p);g.save();g.font='10px "Space Mono",monospace';const w2=g.measureText(tt).width+8;g.fillStyle=cc;g.globalAlpha=.92;g.fillRect(pl+2,yy-14,w2,13);g.globalAlpha=1;g.fillStyle='#fff';g.textAlign='left';g.textBaseline='middle';g.fillText(tt,pl+6,yy-7.5);g.restore()});
  const last=v[n-1],ly=y(last.c),lk=last.c>=last.o?UP:DN;
  g.save();g.setLineDash([4,3]);g.strokeStyle=lk;g.globalAlpha=.8;g.beginPath();g.moveTo(pl,Math.round(ly)+.5);g.lineTo(pl+pw,Math.round(ly)+.5);g.stroke();g.restore();
  const lt=fxNum(last.c),tw=g.measureText(lt).width+10;g.fillStyle=lk;g.beginPath();g.roundRect?g.roundRect(pl+pw+2,ly-9,tw,18,5):g.rect(pl+pw+2,ly-9,tw,18);g.fill();
@@ -708,28 +733,110 @@ function fxFire(a,px){
 }
 $('#toast').onclick=()=>{$('#toast').hidden=true};
 
-// --- analisa AI (angka dihitung di browser, AI hanya menafsirkan) ---
-function fxPack(){
- const d=FX.data,v=d.values,n=v.length,last=v[n-1],tm=FXTF.find(x=>x[0]===FX.tf),k=FX.calc||{},now=fxNow(),mk=fxMarket();
- const f=x=>x==null?'n/a':fxNum(x),px=last.c,e20=k.e20&&k.e20[n-1],e50=k.e50&&k.e50[n-1],rs=k.rsi&&k.rsi[n-1],atr=k.atr;
- const hi=Math.max(...v.map(x=>x.h)),lo=Math.min(...v.map(x=>x.l)),ch=px-v[0].o,lv=fxLevels(v,px,atr);
- const late=(now.ms-fxP(last.t))/6e4>tm[2]*2+10;
+// --- analisa AI v2: multi-rentang, hasil terstruktur, riwayat + skor, mode event, gaya trading ---
+const FXST={scalp:{nm:'Scalping',tfs:['5min','15min','1h'],hor:3,txt:'scalping (horizon 1-3 jam, level dekat, fokus momentum jangka pendek)'},intra:{nm:'Intraday',tfs:['15min','1h','4h','1day'],hor:12,txt:'intraday (horizon sekitar 6-12 jam)'},swing:{nm:'Swing',tfs:['1h','4h','1day'],hor:48,txt:'swing (horizon 1-3 hari, level lebih lebar)'}};
+const FXH={list:ls.get('fxhist',[])};
+const FXSYS='Kamu analis teknikal pasar emas (XAU/USD). Jawab dalam bahasa Indonesia. Aturan ketat: (1) hanya pakai angka dan fakta dari data yang diberikan; jangan mengarang harga, berita, level, atau data lain. (2) Jangan memberi perintah beli atau jual dan jangan menjamin hasil; tulis skenario bersyarat. (3) Jika data tertunda atau pasar tutup, katakan di awal. (4) Sebut event high impact dalam 48 jam sebagai risiko. (5) Bias per rentang sudah dihitung aplikasi; nilai apakah rentang-rentang itu selaras atau bertentangan, dan jangan menyimpulkan lebih kuat dari data. (6) Jika ada Mode event: sebelum rilis, tekankan risiko lonjakan volatilitas dan skenario bersyarat pada reaksi pasca rilis; sesudah rilis dengan angka aktual, jelaskan dampak aktual terhadap forecast bagi dolar AS dan emas hanya dari angka yang diberikan, dan jika angka tidak diberikan katakan tidak bisa menilai. FORMAT WAJIB: baris PERTAMA hanya satu baris berbentuk DATA: {json} tanpa teks lain. Kunci JSON: "bias" ("naik","turun", atau "netral"), "invalidasi" (angka harga yang jika ditembus membuat skenario utama gugur, atau null), "support" (maks 3 angka), "resistance" (maks 3 angka), "target_naik" (maks 2 angka), "target_turun" (maks 2 angka). Semua angka harus berasal dari data yang diberikan. Setelah baris DATA, tulis penjelasan markdown singkat (maksimal sekitar 280 kata) dengan judul tebal: **Ringkasan**, **Keselarasan rentang waktu**, **Level penting**, **Skenario naik dan turun**, **Risiko**.';
+
+// indikator tambahan (semua dihitung di browser)
+function fxMacd(c){const e12=fxEma(c,12),e26=fxEma(c,26),m=c.map((_,i)=>e12[i]!=null&&e26[i]!=null?e12[i]-e26[i]:null),sig=Array(c.length).fill(null),i0=m.findIndex(x=>x!=null);if(i0>=0&&c.length-i0>=9)fxEma(m.slice(i0),9).forEach((x,i)=>{sig[i0+i]=x});return{m,sig,h:m.map((x,i)=>x!=null&&sig[i]!=null?x-sig[i]:null)}}
+function fxBoll(c,n=20,k=2){const r=c.map(()=>null);for(let i=n-1;i<c.length;i++){const s=c.slice(i-n+1,i+1),mu=s.reduce((a,b)=>a+b,0)/n,sd=Math.sqrt(s.reduce((a,b)=>a+(b-mu)**2,0)/n);r[i]={u:mu+k*sd,m:mu,l:mu-k*sd,pb:sd?(c[i]-(mu-k*sd))/(2*k*sd):.5,bw:mu?2*k*sd/mu*100:0}}return r}
+function fxPat(v){
+ const n=v.length;if(n<4)return[];const a=v[n-2],b=v[n-3],o=[],rg=x=>x.h-x.l||1e-9,bd=x=>Math.abs(x.c-x.o),uw=x=>x.h-Math.max(x.o,x.c),lw=x=>Math.min(x.o,x.c)-x.l,mb=x=>Math.max(bd(x),rg(x)*.05);
+ if(bd(a)<=rg(a)*.1)o.push('doji');
+ if(lw(a)>=2*mb(a)&&uw(a)<=lw(a)*.4)o.push('pin bar bullish (ekor bawah panjang)');
+ if(uw(a)>=2*mb(a)&&lw(a)<=uw(a)*.4)o.push('pin bar bearish (ekor atas panjang)');
+ if(b.c<b.o&&a.c>a.o&&a.c>=b.o&&a.o<=b.c&&bd(a)>bd(b))o.push('bullish engulfing');
+ if(b.c>b.o&&a.c<a.o&&a.o>=b.c&&a.c<=b.o&&bd(a)>bd(b))o.push('bearish engulfing');
+ if(a.h<=b.h&&a.l>=b.l)o.push('inside bar');
+ return o.map(x=>x+' @'+a.t.slice(5,16));
+}
+function fxDayLv(v){
+ const by={};v.forEach(c=>{const d=c.t.slice(0,10);(by[d]=by[d]||[]).push(c)});
+ const ds=Object.keys(by).sort(),today=ds[ds.length-1],hl=a=>({h:Math.max(...a.map(x=>x.h)),l:Math.min(...a.map(x=>x.l)),c:a[a.length-1].c});
+ const pd=ds.slice(0,-1).reverse().find(d=>by[d].length>=6),ad=ds.slice().reverse().find(d=>by[d].filter(c=>fxSessMask(c.t)&1).length>=3),out={today:hl(by[today]),prev:pd?{...hl(by[pd]),date:pd}:null};
+ if(ad)out.asia={...hl(by[ad].filter(c=>fxSessMask(c.t)&1)),date:ad,live:ad===today&&fxNow().ms<fxP(ad+' 16:00')};
+ return out;
+}
+function fxTfSum(tf,j){
+ const v=j.values,n=v.length,c=v.map(x=>x.c),last=v[n-1],tm=FXTF.find(x=>x[0]===tf),px=last.c;
+ const e20=fxEma(c,20),e50=fxEma(c,50),rs=fxRsi(c,14),atr=fxAtr(v,14),mc=fxMacd(c),bb=fxBoll(c),E20=e20[n-1],E50=e50[n-1],hist=mc.h[n-1],hp=mc.h[n-2];
+ return{tf,nm:tm[1],px,last,E20,E50,rsi:rs[n-1],atr,macd:mc.m[n-1],sig:mc.sig[n-1],hist,histUp:hist!=null&&hp!=null?hist>hp:null,bb:bb[n-1],lv:fxLevels(v,px,atr),
+  bias:E20!=null&&E50!=null?(px>E20&&E20>E50?'naik':px<E20&&E20<E50?'turun':'campuran'):'n/a',pat:fxPat(v),late:(fxNow().ms-fxP(last.t))/6e4>tm[2]*2+10};
+}
+function fxTfLine(s){
+ const f=x=>x==null?'n/a':fxNum(x),b=s.bb;
+ return'['+s.nm+'] harga '+f(s.px)+' | EMA20 '+f(s.E20)+', EMA50 '+f(s.E50)+' | RSI '+(s.rsi==null?'n/a':s.rsi.toFixed(1))+' | MACD '+f(s.macd)+' (sinyal '+f(s.sig)+', histogram '+(s.hist==null?'n/a':(s.hist>=0?'positif':'negatif')+(s.histUp==null?'':s.histUp?' menguat':' melemah'))+') | Bollinger atas '+f(b&&b.u)+', tengah '+f(b&&b.m)+', bawah '+f(b&&b.l)+(b?', %B '+b.pb.toFixed(2)+', lebar '+b.bw.toFixed(2)+'%':'')+' | ATR14 '+f(s.atr)+' | bias '+s.bias+' | resistance '+(s.lv.res.map(x=>fxNum(x)).join(', ')||'-')+'; support '+(s.lv.sup.map(x=>fxNum(x)).join(', ')||'-')+(s.pat.length?' | pola: '+s.pat.join(', '):'')+(s.late?' | DATA TERTUNDA (candle terakhir '+s.last.t.slice(5,16)+')':'');
+}
+// ambil data rentang lain (lewat cache Worker)
+async function fxFetchTf(tf,signal){
+ const r=await fetch(API+'/api/forex?symbol=XAU/USD&interval='+tf,{headers:auth(),signal});
+ if(!r.ok){const e=await readErr(r);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
+ const j=await r.json();
+ if(!j||!Array.isArray(j.values)||!j.values.length)throw new ApiErr({code:'client_bad_data',source:'client',message:'Data rentang '+tf+' kosong atau formatnya tidak dikenali.',hint:'Pasar mungkin tutup.'});
+ const q=fxQ();if(!j.cached)q.n++;ls.set('fxq',q);if(j.credits&&j.credits.left!=null)FX.left=j.credits.left;
+ return j;
+}
+async function fxMtf(tfs,signal){
+ const res={},fail=[];
+ await Promise.all([...new Set([...tfs,FX.tf])].map(async tf=>{try{res[tf]=(tf===FX.tf&&FX.data)?FX.data:await fxFetchTf(tf,signal)}catch(e){if(e&&e.name==='AbortError')throw e;fail.push(tf+' ('+String((e&&e.info&&e.info.message)||(e&&e.message)||'gagal').slice(0,80)+')')}}));
+ return{res,fail};
+}
+
+// mode event
+function fxEvCtx(){
+ const now=fxNow().ms,e=NW.filter(x=>x.wib-now>-3*36e5&&x.wib-now<=24*36e5).sort((a,b)=>a.wib-b.wib)[0];
+ if(!e)return null;const key=e.d+'|'+e.n;return{ev:e,key,inp:(ls.get('fxev',{}))[key]||{},mode:e.wib>now?'before':'after',diff:e.wib-now};
+}
+function fxEvRender(){
+ const el=$('#fxevp'),c=fxEvCtx();
+ if(!c){if(el.dataset.sig){el.dataset.sig='';el.innerHTML=''}el.hidden=true;return}
+ const sig=c.key+'|'+c.mode,w=nwDt(c.ev.wib),sum='Mode event: '+esc(c.ev.n)+' · '+(c.diff>0?'dalam '+fxDur(c.diff):fxDur(-c.diff)+' lalu')+' ('+w.hm+' WIB)';
+ el.hidden=false;
+ if(el.dataset.sig!==sig){el.dataset.sig=sig;
+  el.innerHTML='<summary></summary><div class="fxevf"><label>Forecast<input data-k="f" inputmode="decimal" autocomplete="off" value="'+esc(c.inp.f||'')+'"></label><label>Sebelumnya<input data-k="p" inputmode="decimal" autocomplete="off" value="'+esc(c.inp.p||'')+'"></label><label>Aktual<input data-k="a" inputmode="decimal" autocomplete="off" value="'+esc(c.inp.a||'')+'"></label></div><small>Isi manual dari sumber resmi (tidak ada sumber gratis yang andal). AI hanya memakai angka yang kamu isi, dan kolom kosong dianggap tidak diketahui.</small>';
+  el.open=c.diff<=36e5*3&&c.diff>-36e5*3}
+ el.querySelector('summary').textContent=sum;
+}
+$('#fxevp').addEventListener('input',e=>{const i=e.target.closest('input');const c=fxEvCtx();if(!i||!c)return;const all=ls.get('fxev',{});all[c.key]={...(all[c.key]||{}),[i.dataset.k]:i.value.trim()};const ks=Object.keys(all);if(ks.length>12)delete all[ks[0]];ls.set('fxev',all)});
+
+// pembuatan prompt
+function fxPack2(res,fail,st){
+ const now=fxNow(),mk=fxMarket(),tm=FXTF.find(x=>x[0]===FX.tf),d=res[FX.tf]||FX.data,v=d.values,last=v[v.length-1],f=x=>x==null?'n/a':fxNum(x);
+ const order=[...st.tfs];if(!order.includes(FX.tf))order.push(FX.tf);
+ const sums=order.filter(t=>res[t]).sort((a,b)=>FXTF.findIndex(x=>x[0]===a)-FXTF.findIndex(x=>x[0]===b)).map(t=>fxTfSum(t,res[t]));
+ const main=sums.find(s=>s.tf===FX.tf),px=main.px,late=main.late;
+ const al=['naik','turun','campuran'].map(b=>[b,sums.filter(s=>s.bias===b)]).filter(x=>x[1].length);
+ const alTxt=sums.length+' rentang dibaca: '+al.map(([b,a])=>a.length+' '+b+' ('+a.map(s=>s.nm).join(', ')+')').join('; ')+'.';
  const status=!mk.open?'Pasar tutup (akhir pekan). Data adalah penutupan terakhir.':late?'Data tertunda. Candle terakhir '+fxT(last.t,true)+' WIB.':'Data segar.';
- const rel=[e20!=null?'harga '+(px>=e20?'di atas':'di bawah')+' EMA20':null,e50!=null?'harga '+(px>=e50?'di atas':'di bawah')+' EMA50':null,e20!=null&&e50!=null?'EMA20 '+(e20>=e50?'di atas':'di bawah')+' EMA50':null,rs!=null?'RSI '+(rs>=70?'jenuh beli (>=70)':rs<=30?'jenuh jual (<=30)':'netral (30-70)'):null].filter(Boolean).join('; ');
+ const dl=res['1h']?fxDayLv(res['1h'].values):null;let dayTxt='Level harian tidak tersedia (data 1 jam gagal dimuat).';
+ if(dl){const dd=x=>x.slice(8,10)+'/'+x.slice(5,7);dayTxt='Level harian (dari candle 1 jam, hari menurut WIB): hari ini tertinggi '+f(dl.today.h)+', terendah '+f(dl.today.l)+'; '+(dl.prev?'kemarin ('+dd(dl.prev.date)+') tertinggi '+f(dl.prev.h)+', terendah '+f(dl.prev.l)+', penutupan '+f(dl.prev.c):'data kemarin tidak cukup')+'; '+(dl.asia?'sesi Asia '+dd(dl.asia.date)+(dl.asia.live?' (masih berjalan)':'')+' tertinggi '+f(dl.asia.h)+', terendah '+f(dl.asia.l)+', harga '+(px>dl.asia.h?'di atas':px<dl.asia.l?'di bawah':'di dalam')+' range tersebut':'data sesi Asia tidak cukup')+'.'}
  const ev=NW.filter(e=>e.wib>now.ms&&e.wib-now.ms<=48*36e5).map(e=>{const w=nwDt(e.wib);return'- '+w.dow+' '+w.d+' '+w.mo+' '+w.hm+' WIB: '+e.n});
- const ctx=['Instrumen: XAU/USD (emas spot). Rentang candle: '+tm[1]+'. Zona waktu: WIB.',
-  'Waktu analisa: '+now.txt.slice(0,5)+' WIB. Harga terakhir: '+fxNum(px)+' (candle '+fxT(last.t,true)+').',
+ const ec=fxEvCtx();let evm='';
+ if(ec){const w=nwDt(ec.ev.wib),i=ec.inp;evm='Mode event: '+(ec.mode==='before'?'SEBELUM rilis':'SETELAH rilis')+'. Event: '+ec.ev.n+' pada '+w.hm+' WIB ('+(ec.diff>0?'dalam '+fxDur(ec.diff):fxDur(-ec.diff)+' lalu')+'). Forecast: '+(i.f||'tidak diisi')+'. Sebelumnya: '+(i.p||'tidak diisi')+'. Aktual: '+(i.a||'tidak diisi')+'.'}
+ const ctx=['Instrumen: XAU/USD (emas spot). Gaya: '+st.txt+'. Zona waktu: WIB.',
+  'Waktu analisa: '+now.txt.slice(0,5)+' WIB. Harga terakhir: '+fxNum(px)+' (rentang utama chart '+tm[1]+', candle '+fxT(last.t,true)+').',
   'Status data: '+status,
-  'Jumlah candle: '+n+' (dari '+fxT(v[0].t,true)+' sampai '+fxT(last.t,true)+').',
-  'Rentang data: tertinggi '+fxNum(hi)+', terendah '+fxNum(lo)+', perubahan dari pembukaan pertama '+(ch>=0?'+':'-')+fxNum(Math.abs(ch))+' ('+(ch>=0?'+':'-')+Math.abs(ch/v[0].o*100).toFixed(2)+'%).',
-  'Indikator (dihitung di aplikasi): EMA20 '+f(e20)+', EMA50 '+f(e50)+', RSI14 '+(rs==null?'n/a':rs.toFixed(1))+', ATR14 '+f(atr)+'.',
-  'Posisi: '+(rel||'data kurang untuk indikator')+'.',
-  'Level swing terdekat: resistance '+(lv.res.length?lv.res.map(x=>fxNum(x)).join(', '):'tidak terdeteksi')+'; support '+(lv.sup.length?lv.sup.map(x=>fxNum(x)).join(', '):'tidak terdeteksi')+'.',
-  ev.length?'Event high impact 48 jam ke depan:\n'+ev.join('\n'):'Tidak ada event high impact dalam 48 jam ke depan (menurut daftar Jadwal News).'].join('\n');
+  'Ringkasan per rentang (indikator dihitung di aplikasi; bias = posisi harga terhadap EMA20 dan EMA50; pola dari candle tertutup terakhir):',
+  ...sums.map(fxTfLine),'Keselarasan: '+alTxt,dayTxt,
+  ev.length?'Event high impact 48 jam ke depan:\n'+ev.join('\n'):'Tidak ada event high impact dalam 48 jam ke depan (menurut daftar Jadwal News).',
+  evm,fail.length?'Rentang gagal dimuat: '+fail.join('; ')+'.':''].filter(Boolean).join('\n');
  const candles=v.slice(-30).map(c=>fxT(c.t,true)+' O'+c.o.toFixed(2)+' H'+c.h.toFixed(2)+' L'+c.l.toFixed(2)+' C'+c.c.toFixed(2)).join('\n');
- return{ctx,prompt:ctx+'\n\n30 candle terakhir (waktu WIB):\n'+candles,tfLabel:tm[1],time:now.txt.slice(0,5),meta:'XAU/USD · '+tm[1]+' · '+now.txt.slice(0,5)+' WIB · harga '+fxNum(px)+(!mk.open?' · pasar tutup':late?' · data tertunda':'')};
+ return{ctx,prompt:ctx+'\n\n30 candle terakhir rentang utama '+tm[1]+' (waktu WIB):\n'+candles,tfLabel:tm[1],time:now.txt.slice(0,5),px,atr:main.atr,align:sums.map(s=>({nm:s.nm,b:s.bias})),
+  meta:'XAU/USD · '+st.nm+' · '+sums.length+' rentang · '+now.txt.slice(0,5)+' WIB · harga '+fxNum(px)+(!mk.open?' · pasar tutup':late?' · data tertunda':'')+(fail.length?' · '+fail.length+' rentang gagal':'')};
 }
 const fxClean=t=>t.replace(/<think>[\s\S]*?(<\/think>|$)/gi,'').trim();
+function fxParse(t){
+ let data=null,body=t;const m=/(^|\n)[^\n]*\{[^{}]*"bias"[^{}]*\}[^\n]*(?=\n|$)/.exec(t);
+ if(m){try{data=JSON.parse(/\{[^{}]*\}/.exec(m[0])[0])}catch{}body=(t.slice(0,m.index)+'\n'+t.slice(m.index+m[0].length)).replace(/^\s*```(json)?\s*$/gim,'').trim()}
+ else if(/^\s*(```(json)?\s*)?DATA:?/i.test(t))body='';
+ return{data,body};
+}
+function fxNormData(d,px){
+ if(!d)return null;const num=x=>{const n=typeof x==='number'?x:parseFloat(String(x).replace(/,/g,''));return isFinite(n)?n:null},near=x=>x!=null&&Math.abs(x-px)<px*.2,arr=a=>(Array.isArray(a)?a:[]).map(num).filter(near);
+ const b=String(d.bias||'').toLowerCase();if(!['naik','turun','netral'].includes(b))return null;
+ const inv=num(d.invalidasi);return{bias:b,inv:near(inv)?inv:null,sup:arr(d.support).slice(0,3),res:arr(d.resistance).slice(0,3),tn:arr(d.target_naik).slice(0,2),tt:arr(d.target_turun).slice(0,2)};
+}
 async function fxAi(messages,onText,signal){
  const res=await fetch(API+'/api/chat',{method:'POST',signal,headers:{'Content-Type':'application/json',...auth()},body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),messages})});
  if(!res.ok){const e=await readErr(res);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
@@ -748,26 +855,94 @@ async function fxAi(messages,onText,signal){
  }
  return out;
 }
+// tampilan hasil
+const FXBD={naik:'NAIK',turun:'TURUN',netral:'NETRAL'};
+function fxSumHtml(A){
+ const D=A.data;if(!D)return'<div class="fxam">Ringkasan terstruktur tidak terbaca dari jawaban AI, jadi level tidak digambar dan analisa ini tidak masuk riwayat.</div>';
+ const L=(t,a)=>a&&a.length?'<span>'+t+' <b>'+a.map(x=>fxNum(x)).join(' · ')+'</b></span>':'';
+ return'<div class="fxsum"><div class="fxsr"><span class="bdg '+D.bias+'">'+FXBD[D.bias]+'</span>'+(D.inv!=null?'<span>Invalidasi <b>'+fxNum(D.inv)+'</b></span>':'')+(A.atr?'<span>ATR14 <b>'+fxNum(A.atr)+'</b> · 1,5× = <b>'+fxNum(A.atr*1.5)+'</b></span>':'')+'</div>'
+  +'<div class="fxsr">'+L('Resistance',D.res)+L('Support',D.sup)+L('Target naik',D.tn)+L('Target turun',D.tt)+'</div>'
+  +(A.align&&A.align.length?'<div class="fxsr">'+A.align.map(x=>'<span class="al '+x.b+'">'+esc(x.nm)+' '+esc(x.b)+'</span>').join('')+'</div>':'')+'</div>';
+}
+function fxShow(A,final){
+ const box=$('#fxar');
+ box.innerHTML='<div class="fxam">'+esc(A.meta)+'</div>'+(final?fxSumHtml(A):'')+'<div class="fxab b">'+(A.body?md(A.body,!!final):'<span class="dots"><i></i><i></i><i></i></span>')+'</div>'
+  +(final?'<div class="fxact"><button type="button" class="sec" data-a="copy">Salin</button><button type="button" class="sec" data-a="chat">Lanjut tanya di obrolan</button></div><div class="fxam">Tafsiran AI dari data di atas, bisa keliru dan bukan saran investasi.</div><details class="fxdt"><summary>Data yang dikirim ke AI</summary><pre>'+esc(A.pack.ctx)+'</pre></details>':'');
+}
+function fxLvItems(){const L=FX.lv;if(!L)return[];const a=[];(L.res||[]).forEach(p=>a.push([p,'R',0]));(L.sup||[]).forEach(p=>a.push([p,'S',1]));(L.tn||[]).forEach(p=>a.push([p,'T↑',2]));(L.tt||[]).forEach(p=>a.push([p,'T↓',2]));if(L.inv!=null)a.push([L.inv,'INV',3]);return a}
 async function fxAnalyze(){
  if(FX.aiCtl){FX.aiCtl.abort();return}
- const box=$('#fxar'),btn=$('#fxab');
+ const box=$('#fxar'),btn=$('#fxab'),st=FXST[FX.style];
  if(!FX.data){box.innerHTML=errBox({source:'client',code:'no_data',message:'Data grafik belum termuat.',hint:'Tunggu grafik tampil, lalu coba lagi.'});return}
- const pack=fxPack();FX.aiCtl=new AbortController();btn.textContent='Batal';FX.ai=null;
- box.innerHTML='<div class="fxam">'+esc(pack.meta)+'</div><div class="fxab b"><span class="dots"><i></i><i></i><i></i></span></div>';
- const body=box.querySelector('.fxab');let out='';
- const fin=()=>{
-  body.innerHTML=md(out,true);FX.ai={text:out,pack};
-  box.insertAdjacentHTML('beforeend','<div class="fxact"><button type="button" class="sec" data-a="copy">Salin</button><button type="button" class="sec" data-a="chat">Lanjut tanya di obrolan</button></div><div class="fxam">Tafsiran AI dari data di atas, bisa keliru dan bukan saran investasi.</div>');
- };
+ FX.aiCtl=new AbortController();const sig=FX.aiCtl.signal;btn.textContent='Batal';FX.ai=null;
+ box.innerHTML='<div class="fxam">Mengambil data '+st.tfs.length+' rentang waktu…</div><div class="fxab b"><span class="dots"><i></i><i></i><i></i></span></div>';
+ let out='',pack=null;
  try{
-  await fxAi([{role:'system',content:FXSYS},{role:'user',content:pack.prompt}],t=>{out=fxClean(t);if(out)body.innerHTML=md(out,false)},FX.aiCtl.signal);
-  if(!out.trim())throw new ApiErr({code:'empty_reply',source:'upstream',message:'AI membalas kosong.',hint:'Coba lagi atau ganti model di sidebar.'});
-  fin();
+  const {res,fail}=await fxMtf(st.tfs,sig);
+  if(!res[FX.tf])throw new ApiErr({code:'no_data',source:'client',message:'Data rentang utama gagal dimuat.',hint:fail.join('; ')||'Coba lagi.'});
+  pack=fxPack2(res,fail,st);
+  const A0={meta:pack.meta,pack,body:''};fxShow(A0,false);
+  await fxAi([{role:'system',content:FXSYS},{role:'user',content:pack.prompt}],t=>{out=fxClean(t);A0.body=fxParse(out).body;fxShow(A0,false)},sig);
+  out=fxClean(out);if(!out.trim())throw new ApiErr({code:'empty_reply',source:'upstream',message:'AI membalas kosong.',hint:'Coba lagi atau ganti model di sidebar.'});
+  fxFinish(out,pack);
  }catch(e){
-  if(e.name==='AbortError'){if(out.trim())fin();else box.innerHTML=''}
+  if(e&&e.name==='AbortError'){if(out.trim()&&pack)fxFinish(out,pack,true);else box.innerHTML=''}
   else{const info=toInfo(e);console.error('[analisa]',info,e);box.innerHTML=errBox(info)}
  }finally{FX.aiCtl=null;btn.textContent='Analisa'}
 }
+function fxFinish(out,pack,partial){
+ const P=fxParse(out),data=partial?null:fxNormData(P.data,pack.px),A={meta:pack.meta,pack,body:P.body,data,atr:pack.atr,align:pack.align,text:P.body};
+ FX.ai=A;FX.lv=data?{inv:data.inv,sup:data.sup,res:data.res,tn:data.tn,tt:data.tt,at:pack.time}:null;
+ if(data){FXH.list.unshift({id:uid(),ts:fxNow().ms,tf:FX.tf,tfLabel:pack.tfLabel,style:FX.style,price:pack.px,atr:pack.atr,bias:data.bias,inv:data.inv,sup:data.sup,res:data.res,tn:data.tn,tt:data.tt,hor:FXST[FX.style].hor,status:'pending',done:false,text:P.body,ctx:pack.ctx,meta:pack.meta,align:pack.align});FXH.list=FXH.list.slice(0,50);fxHSave()}
+ fxShow(A,true);fxHRender();fxLegend();fxDraw();
+}
+// riwayat dan penilaian otomatis
+function fxHSave(){try{ls.set('fxhist',FXH.list)}catch{}}
+const FXSL={pending:'Menunggu',hit:'Tercapai',miss:'Gagal',expired:'Kedaluwarsa',ambigu:'Ambigu',nodata:'Data kurang',na:'Tidak dinilai'};
+function fxJudge(r,v){
+ const now=fxNow().ms,end=r.ts+r.hor*36e5,atr=r.atr||r.price*.002;
+ if(!v.length||fxP(v[0].t)>r.ts+36e5)return{status:'nodata',done:true};
+ const cs=v.filter(c=>{const s=fxP(c.t);return s>r.ts&&s<end});
+ if(r.bias==='naik'||r.bias==='turun'){
+  const up=r.bias==='naik';let T=(up?r.tn:r.tt)[0],I=r.inv;
+  if(T==null||(up?T<=r.price:T>=r.price))T=r.price+(up?1:-1)*1.5*atr;
+  if(I==null||(up?I>=r.price:I<=r.price))I=r.price+(up?-1:1)*atr;
+  for(const c of cs){const t=up?c.h>=T:c.l<=T,i=up?c.l<=I:c.h>=I;if(t&&i)return{status:'ambigu',done:true};if(t)return{status:'hit',done:true};if(i)return{status:'miss',done:true}}
+  return now>=end?{status:'expired',done:true}:{status:'pending',done:false};
+ }
+ const R=(r.res||[]).filter(x=>x>r.price).sort((a,b)=>a-b)[0],S=(r.sup||[]).filter(x=>x<r.price).sort((a,b)=>b-a)[0];
+ if(R==null||S==null)return{status:'na',done:true};
+ for(const c of cs){const a=c.h>=R,b=c.l<=S;if(a&&b)return{status:'ambigu',done:true};if(a||b)return{status:'miss',done:true}}
+ return now>=end?{status:'hit',done:true}:{status:'pending',done:false};
+}
+async function fxEval(){
+ FX.evAt=Date.now();const pend=FXH.list.filter(r=>!r.done);if(!pend.length){fxHRender();return}
+ let j;try{j=await fxFetchTf('1h')}catch(e){console.error('[penilaian]',e);return}
+ let ch=false;pend.forEach(r=>{const o=fxJudge(r,j.values);if(o.status!==r.status||o.done!==r.done){Object.assign(r,o);ch=true}});
+ if(ch)fxHSave();fxHRender();
+}
+function fxHRender(){
+ const L=FXH.list,hit=L.filter(r=>r.status==='hit').length,miss=L.filter(r=>r.status==='miss').length,n=hit+miss;
+ $('#fxhsum').textContent='Riwayat dan akurasi'+(L.length?' ('+L.length+')':'');
+ $('#fxhs').textContent=n?'Skenario terbukti: '+hit+' dari '+n+' ('+Math.round(hit/n*100)+'%).'+(n<20?' Sampel masih kecil (kurang dari 20), jangan dijadikan patokan.':''):(L.length?'Belum ada analisa yang selesai dinilai.':'Belum ada riwayat. Setiap analisa disimpan di perangkat ini dan dinilai otomatis.');
+ $('#fxhl').innerHTML=L.map(r=>{const w=nwDt(r.ts),lab=r.bias==='netral'&&r.status==='hit'?'Range bertahan':r.bias==='netral'&&r.status==='miss'?'Range pecah':FXSL[r.status]||r.status;
+  return'<div class="hi"><span class="bdg '+r.bias+'">'+FXBD[r.bias]+'</span><span class="hm">'+w.d+' '+w.mo+' '+w.hm+' · '+esc(FXST[r.style]?FXST[r.style].nm:r.style)+' · '+fxNum(r.price)+'</span><span class="st '+r.status+'">'+esc(lab)+'</span><button type="button" class="sec" data-id="'+esc(r.id)+'">Lihat</button></div>'}).join('');
+ $('#fxhc').hidden=!L.length;
+}
+$('#fxhl').onclick=e=>{
+ const b=e.target.closest('button[data-id]');if(!b)return;const r=FXH.list.find(x=>x.id===b.dataset.id);if(!r)return;
+ const A={meta:r.meta||'',pack:{ctx:r.ctx||'',tfLabel:r.tfLabel,time:nwDt(r.ts).hm,px:r.price},body:r.text,data:{bias:r.bias,inv:r.inv,sup:r.sup,res:r.res,tn:r.tn,tt:r.tt},atr:r.atr,align:r.align,text:r.text};
+ FX.ai=A;FX.lv={inv:r.inv,sup:r.sup,res:r.res,tn:r.tn,tt:r.tt,at:nwDt(r.ts).hm};fxShow(A,true);fxLegend();fxDraw();$('#fxar').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('#fxhc').onclick=()=>{if(confirm('Hapus semua riwayat analisa di perangkat ini?')){FXH.list=[];fxHSave();fxHRender()}};
+// gaya trading
+function fxStyleSync(){
+ const st=FXST[FX.style];
+ document.querySelectorAll('#fxstl button').forEach(b=>{const on=b.dataset.k===FX.style;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+ $('#fxsti').textContent='Membaca rentang '+st.tfs.map(t=>FXTF.find(x=>x[0]===t)[1]).join(', ')+' · penilaian dalam '+st.hor+' jam · sekitar '+st.tfs.filter(t=>t!==FX.tf).length+' kredit tambahan';
+}
+[['scalp','Scalping'],['intra','Intraday'],['swing','Swing']].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{FX.style=k;ls.set('fxst',k);fxStyleSync()};$('#fxstl').appendChild(b)});
+fxStyleSync();fxHRender();
 $('#fxab').onclick=fxAnalyze;
 $('#fxar').onclick=e=>{
  const b=e.target.closest('button[data-a]');if(!b||!FX.ai)return;
@@ -778,6 +953,7 @@ $('#fxar').onclick=e=>{
   chats.unshift(cur);save();fxClose();nwClose();renderList();renderChat();document.body.classList.remove('open');$('#in').focus();
  }
 };
+
 
 // ===== Jadwal news high impact (data statis, dicek ke situs resmi pada 6 Okt 2026) =====
 // Sumber: The Fed (FOMC), BLS (NFP, CPI), BEA (Core PCE, PDB), ECB, BoE, BoJ. Tanggal bisa bergeser (libur, government shutdown).
@@ -837,7 +1013,4 @@ function nwOpen(){fxClose();document.body.classList.add('nwon');$('#navnw').clas
 function nwClose(){if(!document.body.classList.contains('nwon'))return;document.body.classList.remove('nwon');$('#navnw').classList.remove('on');clearInterval(NWS.tick)}
 $('#navnw').onclick=()=>{if(document.body.classList.contains('nwon')){document.body.classList.remove('open');return}nwOpen()};
 fillModels([],'');
-fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sync();loadModels()}}).catch(e=>console.warn('[session] tidak bisa menghubungi Worker',e));
-renderList();renderChat();
-</script>
-</body></html>
+fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sy
