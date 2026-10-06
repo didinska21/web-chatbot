@@ -139,6 +139,35 @@ body.nwon #nw{display:block}body.nwon #scroll,body.nwon main>footer{display:none
 .nwm{margin-top:4px;color:var(--mu);font-size:12px;line-height:1.55}.nwm b{color:var(--tx);font-weight:600}
 .nwi{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:700;vertical-align:1px;color:var(--dn);background:color-mix(in srgb,var(--dn) 15%,transparent)}
 .nwe{padding:26px 8px;text-align:center;color:var(--mu);font-size:13px}
+[hidden]{display:none!important}
+#toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:90;width:max-content;max-width:min(92vw,520px);padding:12px 16px;border-radius:14px;background:var(--g);color:var(--on);font-weight:700;font-size:13px;line-height:1.5;box-shadow:var(--sh);cursor:pointer}
+.fxwarn{margin-top:14px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.55;background:color-mix(in srgb,#E8A33D 16%,transparent);border:1px solid color-mix(in srgb,#E8A33D 55%,transparent)}
+.fxcd{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.cdc{min-width:0;padding:10px 12px;border-radius:14px;background:var(--sf);border:1px solid var(--bd)}
+.cdc small{color:var(--mu);font-size:11px;line-height:1.4}
+.cdh{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.cdc b{display:block;margin:4px 0 6px;font:700 clamp(18px,5.4vw,22px)/1.2 'Space Mono',monospace;letter-spacing:-.03em;white-space:nowrap}
+.cdb{height:3px;margin-bottom:6px;border-radius:2px;background:color-mix(in srgb,var(--tx) 10%,transparent);overflow:hidden}
+.cdb i{display:block;width:0;height:100%;background:var(--a1);transition:width 1s linear}
+#fxrf{flex:none;width:26px;height:26px;border-radius:8px;border:1px solid var(--bd);color:var(--mu);font-size:15px;line-height:1}#fxrf:hover{color:var(--tx);border-color:var(--a1)}
+#fxind{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+#fxind button{padding:5px 11px;border-radius:99px;background:transparent;border:1px solid var(--bd);font-size:12px;color:var(--mu)}
+#fxind button:hover{color:var(--tx)}#fxind button.on{border-color:var(--a1);color:var(--tx);background:color-mix(in srgb,var(--a1) 14%,transparent)}
+.fxleg{display:flex;flex-wrap:wrap;gap:2px 12px;margin:0 0 8px;font-size:11px;color:var(--mu)}.fxleg i{display:inline-block;width:10px;height:4px;margin-right:6px;border-radius:2px;vertical-align:middle}
+.fxrb{height:96px;margin-top:8px;border-radius:14px;background:var(--sf);border:1px solid var(--bd);overflow:hidden}.fxrb canvas{display:block;width:100%;height:100%;touch-action:pan-y}
+.fxsec{margin-top:16px;padding:14px;border-radius:16px;background:var(--sf);border:1px solid var(--bd)}
+.fxsec h3{font:700 15px/1.3 'Space Mono',monospace}.fxsec small{color:var(--mu);font-size:12px;line-height:1.5}
+.fxar{display:flex;gap:8px;margin-top:10px}
+.fxar input{flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font:inherit;font-size:14px;outline:none}.fxar input:focus{border-color:var(--a1)}
+.pri{flex:none;padding:9px 16px;border-radius:10px;background:var(--g);color:var(--on);font-weight:700;font-size:14px}.pri:hover{filter:brightness(1.06)}
+.fxal{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.fxal:empty{display:none}
+.fxal span{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd);font-size:13px}.fxal small{font-size:11px}.fxal button{color:var(--mu);font-size:12px}.fxal button:hover{color:var(--dn)}
+.fxai{margin-top:14px}.fxaih{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#fxar{margin-top:12px}#fxar:empty{display:none}
+.fxam{margin:6px 0;color:var(--mu);font-size:12px;line-height:1.55}
+.fxab{font-size:14px;line-height:1.7}
+.fxact{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sec{padding:8px 12px;border-radius:10px;border:1px solid var(--bd);background:transparent;color:var(--tx);font-size:13px}.sec:hover{border-color:var(--a1)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media(max-width:760px){
 header{display:flex}
@@ -156,14 +185,32 @@ body.open #ov{opacity:1;pointer-events:auto}
 <div id="ov"></div>
 <main>
 <header><button id="menu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><div class="logo">didinska<i>.ai</i></div></header>
+<div id="toast" role="alert" hidden></div>
 <section id="fx" aria-label="Grafik XAU/USD"><div class="fxw">
 <div class="fxh"><div><h2>XAU/USD</h2><small>Emas spot dalam dolar AS</small></div><div id="fxs" class="fxs" role="status"><i class="d"></i><span>Memuat…</span></div></div>
+<div id="fxwarn" class="fxwarn" role="status" hidden></div>
 <div id="fxe"></div>
 <div class="fxp"><b id="fxpx">—</b><span id="fxch">—</span></div>
+<div class="fxcd">
+<div class="cdc"><div class="cdh"><small>Refresh berikutnya</small><button id="fxrf" type="button" aria-label="Segarkan sekarang" title="Segarkan sekarang">↻</button></div><b id="fxcd1">—</b><div class="cdb"><i id="fxbar"></i></div><small id="fxcs1"></small></div>
+<div class="cdc"><div class="cdh"><small>Candle tutup dalam</small></div><b id="fxcd2">—</b><div class="cdb"></div><small id="fxcs2"></small></div>
+</div>
 <div id="fxtf" role="group" aria-label="Rentang waktu candle"></div>
+<div id="fxind" role="group" aria-label="Indikator"></div>
+<div id="fxleg" class="fxleg" hidden></div>
 <div id="fxc"><canvas id="fxcv" role="img" aria-label="Grafik candlestick XAU/USD"></canvas></div>
+<div id="fxrb" class="fxrb" hidden><canvas id="fxrc" aria-label="Indikator RSI 14"></canvas></div>
 <div id="fxtip" class="fxtip"></div>
 <div class="fxst"><div><small>Tertinggi</small><b id="fxhi">—</b></div><div><small>Terendah</small><b id="fxlo">—</b></div><div><small>Pembukaan</small><b id="fxop">—</b></div></div>
+<div class="fxsec">
+<h3>Alert harga</h3><small>Bunyi dan notifikasi saat harga menyentuh level. Hanya jalan selama halaman ini terbuka.</small>
+<div class="fxar"><input id="fxap" type="text" inputmode="decimal" placeholder="Level, contoh 4150" autocomplete="off" aria-label="Level harga alert"><button id="fxaa" type="button" class="pri">Tambah</button></div>
+<div id="fxal" class="fxal"></div><small id="fxan"></small> <small id="fxam2"></small>
+</div>
+<div class="fxsec fxai">
+<div class="fxaih"><div><h3>Analisa AI</h3><small>Dari data chart yang sedang tampil</small></div><button id="fxab" type="button" class="pri">Analisa</button></div>
+<div id="fxar"></div>
+</div>
 <p class="fxn" id="fxn"></p>
 </div></section>
 <section id="nw" aria-label="Jadwal news high impact"><div class="fxw">
@@ -424,95 +471,314 @@ $('#dgx').onclick=()=>$('#dg').classList.remove('on');
 // ===== Grafik XAU/USD (data dari Worker /api/forex -> Twelve Data) =====
 const FXTF=[['1min','1 mnt',1],['5min','5 mnt',5],['15min','15 mnt',15],['1h','1 jam',60],['4h','4 jam',240],['1day','1 hari',1440]];
 const FXPAD={l:6,r:66,t:10,b:24};
-const FX={tf:FXTF.some(x=>x[0]===ls.get('fxtf',''))?ls.get('fxtf',''):'5min',data:null,vis:[],sel:-1,seq:0,timer:0,deb:0,at:0};
+const FXS=[['Asia','Asia/Tokyo',9,18,'#E8A33D'],['London','Europe/London',8,17,'#38BDF8'],['New York','America/New_York',8,17,'#A78BFA']];
+const FXSYS='Kamu analis teknikal pasar emas (XAU/USD). Jawab dalam bahasa Indonesia, ringkas (maksimal sekitar 250 kata), format markdown dengan judul tebal. Aturan: (1) hanya pakai angka dan fakta dari data yang diberikan, jangan mengarang harga, berita, atau data lain; (2) jangan memberi perintah beli atau jual dan jangan menjamin hasil, tulis skenario bersyarat (jika harga menembus atau bertahan di level tertentu, maka ...); (3) sebut batasan bahwa analisa hanya dari satu rentang waktu dan satu sumber data; (4) jika data tertunda atau pasar tutup, katakan di awal; (5) jika ada event high impact dalam 48 jam, sebut sebagai risiko. Susunan: **Ringkasan** (1-2 kalimat), **Tren dan momentum**, **Level penting**, **Skenario** (naik dan turun), **Risiko**.';
+const FXI=ls.get('fxind',{});
+const FX={tf:FXTF.some(x=>x[0]===ls.get('fxtf',''))?ls.get('fxtf',''):'5min',data:null,vis:[],off:0,calc:null,sc:new Map(),ind:{ema:!!FXI.ema,rsi:!!FXI.rsi,ses:!!FXI.ses},sel:-1,seq:0,loading:0,nextAt:0,lastReq:0,deb:0,at:0,left:null,paused:'',ai:null,aiCtl:null,ac:null,tt:0};
+const FXA={list:ls.get('fxal',[])};
+const p2=n=>String(n).padStart(2,'0');
 const fxNum=(v,d=2)=>Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fxM=s=>/^(\d{4})-(\d\d)-(\d\d)(?:[ T](\d\d):(\d\d))?/.exec(s);
 const fxP=s=>{const m=fxM(s);return m?Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)):NaN};
 const fxT=(s,full)=>{const m=fxM(s);if(!m)return s;const d=m[3]+'/'+m[2],h=(m[4]||'00')+':'+(m[5]||'00');if(FX.tf==='1day')return d;return full||['1h','4h'].includes(FX.tf)?d+' '+h:h};
 function fxNow(){const o={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(x=>o[x.type]=x.value);return{ms:Date.UTC(+o.year,o.month-1,+o.day,+o.hour,+o.minute,+o.second),txt:o.hour+':'+o.minute+':'+o.second}}
-FXTF.forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{if(FX.tf===k)return;FX.tf=k;ls.set('fxtf',k);FX.data=null;FX.sel=-1;fxSync();fxRender();clearTimeout(FX.deb);FX.deb=setTimeout(()=>{fxLoad();fxPoll()},250)};$('#fxtf').appendChild(b)});
-function fxSync(){document.querySelectorAll('#fxtf button').forEach(b=>{const on=b.dataset.k===FX.tf;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})}
+const fxDur=ms=>{const m=Math.max(1,Math.round(ms/6e4)),h=Math.floor(m/60);return h?h+' jam'+(m%60?' '+m%60+' mnt':''):m+' mnt'};
+const fxClk=s=>{s=Math.max(0,s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return(h?h+':'+p2(m):p2(m))+':'+p2(s%60)};
+const fxWhen=w=>{const x=nwDt(w);return x.dow+' '+x.hm};
+const fxLast=()=>FX.data?FX.data.values[FX.data.values.length-1]:null;
+
+// --- jam pasar emas: tutup Jumat 17:00 ET sampai Minggu 18:00 ET (libur khusus tidak dihitung) ---
+function fxMarket(){
+ const u=Date.now(),w=nwWall(u,'America/New_York'),x=new Date(w),dow=x.getUTCDay(),m=x.getUTCHours()*60+x.getUTCMinutes();
+ if(!(dow===6||(dow===5&&m>=1020)||(dow===0&&m<1080)))return{open:true};
+ let d=new Date(w);
+ for(let i=0;i<8;i++){if(d.getUTCDay()===0){const r=nwUtc(d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()),'18:00','America/New_York');if(r>u)return{open:false,reopen:r+7*36e5}}d=new Date(d.getTime()+864e5)}
+ return{open:false,reopen:0};
+}
+
+// --- indikator (dihitung di browser) ---
+function fxEma(a,n){const r=Array(a.length).fill(null);if(a.length<n)return r;let e=a.slice(0,n).reduce((x,y)=>x+y,0)/n;r[n-1]=e;const k=2/(n+1);for(let i=n;i<a.length;i++){e=a[i]*k+e*(1-k);r[i]=e}return r}
+function fxRsi(a,n=14){const r=Array(a.length).fill(null);if(a.length<=n)return r;let g=0,l=0;for(let i=1;i<=n;i++){const d=a[i]-a[i-1];if(d>=0)g+=d;else l-=d}g/=n;l/=n;r[n]=l===0?100:100-100/(1+g/l);for(let i=n+1;i<a.length;i++){const d=a[i]-a[i-1];g=(g*(n-1)+Math.max(d,0))/n;l=(l*(n-1)+Math.max(-d,0))/n;r[i]=l===0?100:100-100/(1+g/l)}return r}
+function fxAtr(v,n=14){if(v.length<=n)return null;const tr=v.map((x,i)=>i?Math.max(x.h-x.l,Math.abs(x.h-v[i-1].c),Math.abs(x.l-v[i-1].c)):x.h-x.l);let a=tr.slice(1,n+1).reduce((s,y)=>s+y,0)/n;for(let i=n+1;i<tr.length;i++)a=(a*(n-1)+tr[i])/n;return a}
+function fxLevels(v,price,atr){
+ const w=3,pts=[];
+ for(let i=w;i<v.length-w;i++){let H=1,L=1;for(let j=1;j<=w;j++){if(v[i].h<=v[i-j].h||v[i].h<=v[i+j].h)H=0;if(v[i].l>=v[i-j].l||v[i].l>=v[i+j].l)L=0}if(H)pts.push(v[i].h);if(L)pts.push(v[i].l)}
+ const tol=Math.max((atr||0)*.6,price*.0004),cl=[];pts.sort((a,b)=>a-b);
+ pts.forEach(p=>{const g=cl[cl.length-1];if(g&&p-g.s/g.n<=tol){g.s+=p;g.n++}else cl.push({s:p,n:1})});
+ const lv=cl.map(g=>g.s/g.n);
+ return{res:lv.filter(x=>x>price+tol*.3).slice(0,2),sup:lv.filter(x=>x<price-tol*.3).reverse().slice(0,2)};
+}
+function fxCalc(){const d=FX.data;if(!d){FX.calc=null;return}const v=d.values,c=v.map(x=>x.c);FX.calc={e20:fxEma(c,20),e50:fxEma(c,50),rsi:fxRsi(c,14),atr:fxAtr(v,14)}}
+function fxSessMask(t){let m=FX.sc.get(t);if(m!==undefined)return m;const u=fxP(t)-7*36e5;m=0;FXS.forEach(([,z,a,b],i)=>{const w=new Date(nwWall(u,z)),d=w.getUTCDay(),h=w.getUTCHours()+w.getUTCMinutes()/60;if(d>0&&d<6&&h>=a&&h<b)m|=1<<i});FX.sc.set(t,m);return m}
+function fxSessTxt(){return FXS.map(([n,z,a,b,c])=>{const w=new Date(nwWall(Date.now(),z)),ds=w.getUTCFullYear()+'-'+p2(w.getUTCMonth()+1)+'-'+p2(w.getUTCDate()),h=u=>{const x=new Date(u+7*36e5);return p2(x.getUTCHours())+':'+p2(x.getUTCMinutes())};return{n,c,t:h(nwUtc(ds,p2(a)+':00',z))+'-'+h(nwUtc(ds,p2(b)+':00',z))}})}
+
+// --- kuota Twelve Data (perkiraan di perangkat ini) ---
+function fxQ(){const day=new Date(fxNow().ms).toISOString().slice(0,10),q=ls.get('fxq',{});return q.d===day?q:{d:day,n:0}}
+const fxPaused=()=>fxQ().n>=780||(FX.left!=null&&FX.left<=20);
+
+// --- UI dasar ---
+FXTF.forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{if(FX.tf===k)return;FX.tf=k;ls.set('fxtf',k);FX.data=null;FX.sel=-1;FX.nextAt=Date.now()+400;fxSync();fxRender();clearTimeout(FX.deb);FX.deb=setTimeout(fxLoad,250)};$('#fxtf').appendChild(b)});
+[['ema','EMA 20/50'],['rsi','RSI 14'],['ses','Sesi pasar']].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{FX.ind[k]=!FX.ind[k];ls.set('fxind',FX.ind);fxSync();fxRender()};$('#fxind').appendChild(b)});
+function fxSync(){
+ document.querySelectorAll('#fxtf button').forEach(b=>{const on=b.dataset.k===FX.tf;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+ document.querySelectorAll('#fxind button').forEach(b=>{const on=!!FX.ind[b.dataset.k];b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+}
 async function fxLoad(){
- const my=++FX.seq;
+ const my=++FX.seq;FX.loading=my;FX.lastReq=Date.now();fxCd();
  try{
   const r=await fetch(API+'/api/forex?symbol=XAU/USD&interval='+FX.tf,{headers:auth()});
   if(!r.ok){const e=await readErr(r);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
   const j=await r.json();if(my!==FX.seq)return;
   if(!j||!Array.isArray(j.values)||!j.values.length)throw new ApiErr({code:'client_bad_data',source:'client',message:'Data grafik kosong atau formatnya tidak dikenali.',hint:'Pasar mungkin tutup. Coba rentang lain.'});
-  FX.data=j;FX.at=Date.now();$('#fxe').innerHTML='';fxRender();
+  const q=fxQ();if(!j.cached)q.n++;ls.set('fxq',q);FX.left=j.credits&&j.credits.left!=null?j.credits.left:null;
+  FX.data=j;FX.at=Date.now();FX.nextAt=Date.now()+60000;$('#fxe').innerHTML='';fxRender();fxAlCheck();
  }catch(e){
   if(my!==FX.seq)return;
+  FX.nextAt=Date.now()+(e&&e.info&&e.info.upstream_status===429?120000:60000);
   const info=toInfo(e);console.error('[forex]',info,e);$('#fxe').innerHTML=errBox(info);fxRender();
- }
+ }finally{if(FX.loading===my)FX.loading=0;fxCd()}
 }
-function fxPoll(){clearInterval(FX.timer);FX.timer=setInterval(()=>{if(!document.hidden)fxLoad()},60000)}
-function fxOpen(){nwClose();document.body.classList.add('fxon');$('#navfx').classList.add('on');document.body.classList.remove('open');renderList();fxSync();fxRender();fxLoad();fxPoll()}
-function fxClose(){if(!document.body.classList.contains('fxon'))return;document.body.classList.remove('fxon');$('#navfx').classList.remove('on');clearInterval(FX.timer);clearTimeout(FX.deb);FX.seq++}
+function fxOpen(){nwClose();document.body.classList.add('fxon');$('#navfx').classList.add('on');document.body.classList.remove('open');renderList();fxSync();fxRender();fxAlRender();if(!FX.data||fxMarket().open)fxLoad()}
+function fxClose(){if(!document.body.classList.contains('fxon'))return;document.body.classList.remove('fxon');$('#navfx').classList.remove('on');clearTimeout(FX.deb)}
 $('#navfx').onclick=()=>{if(document.body.classList.contains('fxon')){document.body.classList.remove('open');return}fxOpen()};
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('fxon')&&Date.now()-FX.at>45000)fxLoad()});
+$('#fxrf').onclick=()=>{if(Date.now()-FX.lastReq<5000)return;fxLoad()};
+
+// --- detak 1 detik: countdown, jadwal refresh, peringatan news ---
+function fxTick(){
+ const on=document.body.classList.contains('fxon');
+ if(document.hidden||(!on&&!FXA.list.length))return;
+ const mk=fxMarket();FX.paused=!mk.open?'market':fxPaused()?'quota':'';
+ if(!FX.loading&&Date.now()>=FX.nextAt&&(!FX.paused||!FX.data))fxLoad();
+ if(on){fxCd(mk);fxWarn()}
+}
+setInterval(fxTick,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)fxTick()});
+function fxCd(mk){
+ if(!document.body.classList.contains('fxon'))return;
+ mk=mk||fxMarket();
+ let v1,s1='otomatis tiap 60 dtk',pct=0;
+ if(FX.loading){v1='Memuat…';pct=100}
+ else if(!mk.open){v1='Dijeda';s1='Pasar tutup'+(mk.reopen?', buka '+fxWhen(mk.reopen)+' WIB':'')}
+ else if(FX.paused==='quota'){v1='Dijeda';s1='Kuota harian hampir habis. Tekan ↻ untuk manual.'}
+ else{const s=Math.max(0,Math.ceil((FX.nextAt-Date.now())/1000));v1=s+' dtk';pct=Math.min(100,s/60*100)}
+ $('#fxcd1').textContent=v1;$('#fxcs1').textContent=s1;$('#fxbar').style.width=pct+'%';
+ let v2='—',s2='';const d=FX.data;
+ if(d&&mk.open){const last=fxLast(),tm=FXTF.find(x=>x[0]===FX.tf),st=fxP(last.t),now=fxNow().ms;
+  if((now-st)/6e4<=tm[2]*2+10){const rem=Math.floor((st+tm[2]*6e4-now)/1000);if(rem>0){v2=fxClk(rem);s2='candle '+fxT(last.t)+(FX.tf==='1day'?'':' WIB')}else{v2='sebentar…';s2='menunggu candle baru'}}
+  else s2='data tertunda'}
+ else if(!mk.open)s2='pasar tutup';
+ $('#fxcd2').textContent=v2;$('#fxcs2').textContent=s2;
+}
+function fxWarn(){
+ const el=$('#fxwarn'),now=fxNow().ms,near=NW.filter(e=>e.wib-now>-36e5&&e.wib-now<=864e5).sort((a,b)=>a.wib-b.wib);
+ let h='';
+ if(near.length){const e=near[0],diff=e.wib-now,dt=nwDt(e.wib);
+  h='<b>Perhatian:</b> '+esc(e.n)+' '+(diff>0?'dalam '+fxDur(diff):'baru dirilis '+fxDur(-diff)+' lalu')+' ('+dt.hm+' WIB). '+(diff>0?'Volatilitas bisa melonjak menjelang dan saat rilis.':'Volatilitas biasanya masih tinggi beberapa saat setelah rilis.')+(near.length>1?' (+'+(near.length-1)+' event lain)':'')}
+ if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;el.hidden=!h}
+}
+
+// --- render ---
 function fxRender(){
- const d=FX.data,tfm=FXTF.find(x=>x[0]===FX.tf),st=$('#fxs'),cl=$('#fxch');
- FX.vis=d?d.values.slice(-(($('#fxc').clientWidth||400)<520?70:100)):[];
+ const d=FX.data,tfm=FXTF.find(x=>x[0]===FX.tf),st=$('#fxs'),cl=$('#fxch'),mk=fxMarket();
+ fxCalc();
+ FX.vis=d?d.values.slice(-(($('#fxc').clientWidth||400)<520?70:100)):[];FX.off=d?d.values.length-FX.vis.length:0;
+ fxLegend();
  if(!d||!FX.vis.length){
   $('#fxpx').textContent='—';cl.textContent='—';cl.className='';['fxhi','fxlo','fxop'].forEach(i=>$('#'+i).textContent='—');
-  if(!$('#fxe').innerHTML)st.innerHTML='<i class="d"></i><span>Memuat…</span>';else st.innerHTML='<i class="d"></i><span>Data belum tersedia</span>';
-  $('#fxn').textContent='';fxDraw();fxTip();return;
+  st.innerHTML='<i class="d"></i><span>'+($('#fxe').innerHTML?'Data belum tersedia':'Memuat…')+'</span>';
+  $('#fxn').textContent='';fxDraw();fxTip();fxCd();return;
  }
  const v=FX.vis,last=v[v.length-1],first=v[0],hi=Math.max(...v.map(x=>x.h)),lo=Math.min(...v.map(x=>x.l)),ch=last.c-first.o,pc=ch/first.o*100;
  $('#fxpx').textContent=fxNum(last.c);
  cl.textContent=(ch>=0?'+':'−')+fxNum(Math.abs(ch))+' ('+(ch>=0?'+':'−')+Math.abs(pc).toFixed(2)+'%) dalam '+v.length+' candle';cl.className=ch>=0?'up':'dn';
  $('#fxhi').textContent=fxNum(hi);$('#fxlo').textContent=fxNum(lo);$('#fxop').textContent=fxNum(first.o);
- const now=fxNow(),lag=(now.ms-fxP(last.t))/60000,late=lag>tfm[2]*2+10;
- st.innerHTML=late?'<i class="d"></i><span>Pasar tutup atau data tertunda. Candle terakhir '+esc(fxT(last.t,true))+' WIB</span>':'<i class="d on"></i><span>Diperbarui '+now.txt+' WIB'+(d.cached&&d.age>5?' (cache '+d.age+' dtk)':'')+'</span>';
+ const now=fxNow(),late=(now.ms-fxP(last.t))/60000>tfm[2]*2+10;
+ st.innerHTML=!mk.open?'<i class="d"></i><span>Pasar tutup. Harga adalah penutupan terakhir (candle '+esc(fxT(last.t,true))+' WIB)</span>':late?'<i class="d"></i><span>Data tertunda. Candle terakhir '+esc(fxT(last.t,true))+' WIB</span>':'<i class="d on"></i><span>Diperbarui '+now.txt+' WIB'+(d.cached&&d.age>5?' (cache '+d.age+' dtk)':'')+'</span>';
  if(d.stale)st.innerHTML='<i class="d"></i><span>Data lama, Twelve Data sedang gagal dihubungi</span>';
- const cr=d.credits&&d.credits.left!=null?' Sisa kredit hari ini: '+d.credits.left+'.':'';
- $('#fxn').textContent='Data dari Twelve Data, waktu dalam WIB. Diperbarui otomatis tiap 60 detik selama halaman ini terbuka, maksimal 1 kredit per pembaruan.'+cr+' Bukan saran investasi.';
+ const q=fxQ();
+ $('#fxn').textContent='Data dari Twelve Data, waktu dalam WIB. Diperbarui otomatis tiap 60 detik selama halaman ini terbuka dan pasar buka (berhenti saat akhir pekan). Perkiraan kredit terpakai hari ini di perangkat ini: '+q.n+' dari 800.'+(FX.left!=null?' Sisa kredit dari server: '+FX.left+'.':'')+' Bukan saran investasi.';
  $('#fxcv').setAttribute('aria-label','Grafik candlestick XAU/USD, harga terakhir '+fxNum(last.c)+', rentang '+tfm[1]);
  if(FX.sel>=v.length)FX.sel=-1;
- fxDraw();fxTip();
+ fxDraw();fxTip();fxCd();fxAlRender();
+}
+function fxLegend(){
+ const el=$('#fxleg');let h='';
+ if(FX.ind.ema)h+='<span><i style="background:#F472B6"></i>EMA 20</span><span><i style="background:var(--tx)"></i>EMA 50</span>';
+ if(FX.ind.ses)h+=FX.tf==='1day'?'<span>Sesi pasar hanya tampil di rentang di bawah 1 hari.</span>':fxSessTxt().map(s=>'<span><i style="background:'+s.c+'"></i>'+s.n+' '+s.t+' WIB</span>').join('');
+ if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}el.hidden=!h;
 }
 function fxTip(){
  const el=$('#fxtip'),v=FX.vis;
  if(FX.sel<0||!v[FX.sel]){el.innerHTML=v.length?'<span>Sentuh atau geser di grafik untuk melihat detail candle.</span>':'';return}
- const c=v[FX.sel];el.innerHTML='<span><b>'+esc(fxT(c.t,true))+'</b></span><span>O <b>'+fxNum(c.o)+'</b></span><span>H <b>'+fxNum(c.h)+'</b></span><span>L <b>'+fxNum(c.l)+'</b></span><span>C <b style="color:var(--'+(c.c>=c.o?'up':'dn')+')">'+fxNum(c.c)+'</b></span>';
+ const c=v[FX.sel],gi=FX.off+FX.sel,k=FX.calc||{};
+ let h='<span><b>'+esc(fxT(c.t,true))+'</b></span><span>O <b>'+fxNum(c.o)+'</b></span><span>H <b>'+fxNum(c.h)+'</b></span><span>L <b>'+fxNum(c.l)+'</b></span><span>C <b style="color:var(--'+(c.c>=c.o?'up':'dn')+')">'+fxNum(c.c)+'</b></span>';
+ if(FX.ind.ema&&k.e20&&k.e20[gi]!=null)h+='<span>EMA20 <b>'+fxNum(k.e20[gi])+'</b></span>';
+ if(FX.ind.ema&&k.e50&&k.e50[gi]!=null)h+='<span>EMA50 <b>'+fxNum(k.e50[gi])+'</b></span>';
+ if(FX.ind.rsi&&k.rsi&&k.rsi[gi]!=null)h+='<span>RSI <b>'+k.rsi[gi].toFixed(1)+'</b></span>';
+ el.innerHTML=h;
 }
 function fxDraw(){
  const cv=$('#fxcv'),box=$('#fxc'),W=box.clientWidth,H=box.clientHeight;if(!W||!H)return;
  const dpr=Math.min(devicePixelRatio||1,3);cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
  const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim(),mu=col('--mu'),tx=col('--tx'),UP=col('--up'),DN=col('--dn');
- const grid=cs.getPropertyValue('--tx').trim()?'color-mix(in srgb,'+tx+' 10%,transparent)':'rgba(128,128,128,.15)';
- const F='11px "Space Mono",ui-monospace,monospace';g.font=F;
+ const grid='color-mix(in srgb,'+tx+' 10%,transparent)';
+ g.font='11px "Space Mono",ui-monospace,monospace';
  const v=FX.vis;
- if(!v.length){g.fillStyle=mu;g.textAlign='center';g.textBaseline='middle';g.fillText($('#fxe').innerHTML?'Grafik belum bisa ditampilkan':'Memuat data…',W/2,H/2);return}
- const {l:pl,r:pr,t:pt,b:pb}=FXPAD,pw=W-pl-pr,ph=H-pt-pb,n=v.length,cw=pw/n;
- let lo=Math.min(...v.map(x=>x.l)),hi=Math.max(...v.map(x=>x.h));const pad=(hi-lo)*.08||1;lo-=pad;hi+=pad;
+ if(!v.length){g.fillStyle=mu;g.textAlign='center';g.textBaseline='middle';g.fillText($('#fxe').innerHTML?'Grafik belum bisa ditampilkan':'Memuat data…',W/2,H/2);fxDrawRsi();return}
+ const ses=FX.ind.ses&&FX.tf!=='1day',k=FX.calc||{},off=FX.off;
+ const {l:pl,r:pr,b:pb}=FXPAD,pt=ses?20:FXPAD.t,pw=W-pl-pr,ph=H-pt-pb,n=v.length,cw=pw/n;
+ let lo=Math.min(...v.map(x=>x.l)),hi=Math.max(...v.map(x=>x.h));
+ if(FX.ind.ema)for(let i=0;i<n;i++)[k.e20,k.e50].forEach(a=>{const e=a&&a[off+i];if(e!=null){if(e<lo)lo=e;if(e>hi)hi=e}});
+ const pad=(hi-lo)*.08||1;lo-=pad;hi+=pad;
  const y=p=>pt+(hi-p)/(hi-lo)*ph,x=i=>pl+(i+.5)*cw,lyy=y(v[n-1].c);
- // grid + skala harga
  g.textBaseline='middle';g.textAlign='left';
- for(let k=0;k<=4;k++){const p=hi-(hi-lo)*k/4,yy=pt+ph*k/4;g.strokeStyle=grid;g.lineWidth=1;g.beginPath();g.moveTo(pl,Math.round(yy)+.5);g.lineTo(pl+pw,Math.round(yy)+.5);g.stroke();if(Math.abs(yy-lyy)>17){g.fillStyle=mu;g.fillText(fxNum(p),pl+pw+6,Math.min(H-pb-6,Math.max(pt+6,yy)))}}
- // label waktu
+ for(let q=0;q<=4;q++){const p=hi-(hi-lo)*q/4,yy=pt+ph*q/4;g.strokeStyle=grid;g.lineWidth=1;g.beginPath();g.moveTo(pl,Math.round(yy)+.5);g.lineTo(pl+pw,Math.round(yy)+.5);g.stroke();if(Math.abs(yy-lyy)>17){g.fillStyle=mu;g.fillText(fxNum(p),pl+pw+6,Math.min(H-pb-6,Math.max(pt+6,yy)))}}
  g.textBaseline='alphabetic';
- for(let k=0;k<=4;k++){const i=Math.round(k*(n-1)/4);g.fillStyle=mu;g.textAlign=k===0?'left':k===4?'right':'center';g.fillText(fxT(v[i].t),k===0?pl:k===4?pl+pw:x(i),H-7)}
- // candle
+ for(let q=0;q<=4;q++){const i=Math.round(q*(n-1)/4);g.fillStyle=mu;g.textAlign=q===0?'left':q===4?'right':'center';g.fillText(fxT(v[i].t),q===0?pl:q===4?pl+pw:x(i),H-7)}
+ if(ses)FXS.forEach(([,,,,c],s)=>{let i=0;while(i<n){if(fxSessMask(v[i].t)>>s&1){let j=i;while(j+1<n&&fxSessMask(v[j+1].t)>>s&1)j++;g.fillStyle=c;g.globalAlpha=.9;g.fillRect(pl+i*cw,3+s*5,Math.max(2,(j-i+1)*cw-1),3);g.globalAlpha=1;i=j+1}else i++}});
  const bw=Math.max(1,Math.floor(cw*.66));
- v.forEach((c,i)=>{const up=c.c>=c.o,k=up?UP:DN,cx=Math.round(x(i))+.5;g.strokeStyle=k;g.fillStyle=k;g.lineWidth=1;g.beginPath();g.moveTo(cx,y(c.h));g.lineTo(cx,y(c.l));g.stroke();const t=y(Math.max(c.o,c.c)),h=Math.max(1,Math.abs(y(c.o)-y(c.c)));g.fillRect(Math.round(x(i)-bw/2),t,bw,h)});
- // garis harga terakhir
+ v.forEach((c,i)=>{const up=c.c>=c.o,kc=up?UP:DN,cx=Math.round(x(i))+.5;g.strokeStyle=kc;g.fillStyle=kc;g.lineWidth=1;g.beginPath();g.moveTo(cx,y(c.h));g.lineTo(cx,y(c.l));g.stroke();g.fillRect(Math.round(x(i)-bw/2),y(Math.max(c.o,c.c)),bw,Math.max(1,Math.abs(y(c.o)-y(c.c))))});
+ if(FX.ind.ema)[[k.e20,'#F472B6'],[k.e50,tx]].forEach(([a,c])=>{if(!a)return;g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();let st=false;for(let i=0;i<n;i++){const e=a[off+i];if(e==null)continue;if(!st){g.moveTo(x(i),y(e));st=true}else g.lineTo(x(i),y(e))}g.stroke()});
  const last=v[n-1],ly=y(last.c),lk=last.c>=last.o?UP:DN;
  g.save();g.setLineDash([4,3]);g.strokeStyle=lk;g.globalAlpha=.8;g.beginPath();g.moveTo(pl,Math.round(ly)+.5);g.lineTo(pl+pw,Math.round(ly)+.5);g.stroke();g.restore();
  const lt=fxNum(last.c),tw=g.measureText(lt).width+10;g.fillStyle=lk;g.beginPath();g.roundRect?g.roundRect(pl+pw+2,ly-9,tw,18,5):g.rect(pl+pw+2,ly-9,tw,18);g.fill();
  g.fillStyle='#fff';g.textAlign='left';g.textBaseline='middle';g.fillText(lt,pl+pw+7,ly+.5);
- // crosshair
+ FXA.list.forEach(a=>{if(a.p<lo||a.p>hi)return;const ay=y(a.p);g.save();g.setLineDash([2,4]);g.strokeStyle='#E8A33D';g.lineWidth=1;g.beginPath();g.moveTo(pl,Math.round(ay)+.5);g.lineTo(pl+pw,Math.round(ay)+.5);g.stroke();g.restore();g.fillStyle='#E8A33D';g.textAlign='left';g.textBaseline='middle';g.fillText('⏰',pl+2,ay-7)});
  if(FX.sel>=0&&v[FX.sel]){const c=v[FX.sel],cx=Math.round(x(FX.sel))+.5,cy=y(c.c);g.save();g.setLineDash([3,3]);g.strokeStyle=tx;g.globalAlpha=.55;g.beginPath();g.moveTo(cx,pt);g.lineTo(cx,pt+ph);g.moveTo(pl,Math.round(cy)+.5);g.lineTo(pl+pw,Math.round(cy)+.5);g.stroke();g.restore();g.fillStyle=tx;g.beginPath();g.arc(cx,cy,3,0,7);g.fill()}
+ fxDrawRsi();
+}
+function fxDrawRsi(){
+ const box=$('#fxrb');box.hidden=!FX.ind.rsi||!FX.vis.length;if(box.hidden)return;
+ const cv=$('#fxrc'),W=box.clientWidth,H=box.clientHeight;if(!W||!H)return;
+ const dpr=Math.min(devicePixelRatio||1,3);cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+ const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+ const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim(),mu=col('--mu'),tx=col('--tx'),ac=col('--ac');
+ g.font='11px "Space Mono",ui-monospace,monospace';
+ const {l:pl,r:pr}=FXPAD,pt=8,pb=8,pw=W-pl-pr,ph=H-pt-pb,v=FX.vis,n=v.length,cw=pw/n,rs=FX.calc&&FX.calc.rsi,off=FX.off;
+ const y=r=>pt+(100-r)/100*ph,x=i=>pl+(i+.5)*cw;
+ g.save();g.fillStyle='color-mix(in srgb,'+tx+' 5%,transparent)';g.fillRect(pl,y(70),pw,y(30)-y(70));g.restore();
+ [70,50,30].forEach(l=>{g.save();g.setLineDash(l===50?[2,4]:[]);g.strokeStyle='color-mix(in srgb,'+tx+' 16%,transparent)';g.beginPath();g.moveTo(pl,Math.round(y(l))+.5);g.lineTo(pl+pw,Math.round(y(l))+.5);g.stroke();g.restore();g.fillStyle=mu;g.textAlign='left';g.textBaseline='middle';g.fillText(l,pl+pw+6,y(l))});
+ if(rs){g.strokeStyle=ac;g.lineWidth=1.5;g.beginPath();let st=false;for(let i=0;i<n;i++){const r=rs[off+i];if(r==null)continue;if(!st){g.moveTo(x(i),y(r));st=true}else g.lineTo(x(i),y(r))}g.stroke();const lr=rs[off+n-1];if(lr!=null){g.fillStyle=ac;g.textAlign='left';g.textBaseline='middle';g.fillText('RSI '+lr.toFixed(1),pl+4,pt+7)}}
+ if(FX.sel>=0&&v[FX.sel]){const cx=Math.round(x(FX.sel))+.5;g.save();g.setLineDash([3,3]);g.strokeStyle=tx;g.globalAlpha=.55;g.beginPath();g.moveTo(cx,pt);g.lineTo(cx,pt+ph);g.stroke();g.restore()}
 }
 (()=>{
- const cv=$('#fxcv'),idx=e=>{const r=cv.getBoundingClientRect(),n=FX.vis.length,pw=r.width-FXPAD.l-FXPAD.r;return n?Math.max(0,Math.min(n-1,Math.floor((e.clientX-r.left-FXPAD.l)/pw*n))):-1};
- const mv=e=>{const i=idx(e);if(i!==FX.sel){FX.sel=i;fxDraw();fxTip()}};
- cv.addEventListener('pointerdown',mv);cv.addEventListener('pointermove',mv);
- cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&FX.sel>=0){FX.sel=-1;fxDraw();fxTip()}});
+ const cv=$('#fxcv'),rc=$('#fxrc'),idx=(e,el)=>{const r=el.getBoundingClientRect(),n=FX.vis.length,pw=r.width-FXPAD.l-FXPAD.r;return n?Math.max(0,Math.min(n-1,Math.floor((e.clientX-r.left-FXPAD.l)/pw*n))):-1};
+ [cv,rc].forEach(el=>{
+  const mv=e=>{const i=idx(e,el);if(i!==FX.sel){FX.sel=i;fxDraw();fxTip()}};
+  el.addEventListener('pointerdown',mv);el.addEventListener('pointermove',mv);
+  el.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&FX.sel>=0){FX.sel=-1;fxDraw();fxTip()}});
+ });
  let raf=0;new ResizeObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(document.body.classList.contains('fxon'))fxRender()})}).observe($('#fxc'));
  new MutationObserver(()=>{if(document.body.classList.contains('fxon'))fxDraw()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 })();
+
+// --- alert harga (hanya jalan selama halaman terbuka) ---
+function fxAlSave(){ls.set('fxal',FXA.list)}
+function fxAlRender(){
+ const px=fxLast()?fxLast().c:null;
+ $('#fxal').innerHTML=FXA.list.map(a=>'<span>'+(a.dir==='up'?'naik ≥ ':'turun ≤ ')+'<b>'+fxNum(a.p)+'</b>'+(px!=null?'<small>'+(a.p>=px?'+':'−')+fxNum(Math.abs(a.p-px))+'</small>':'')+'<button type="button" data-id="'+esc(a.id)+'" aria-label="Hapus alert">✕</button></span>').join('');
+ $('#fxan').textContent=FXA.list.length?'':'Belum ada alert aktif.';
+}
+$('#fxal').onclick=e=>{const b=e.target.closest('button');if(!b)return;FXA.list=FXA.list.filter(a=>a.id!==b.dataset.id);fxAlSave();fxAlRender();fxDraw()};
+$('#fxaa').onclick=()=>{
+ const inp=$('#fxap'),p=parseFloat(String(inp.value).replace(',','.')),msg=$('#fxam2'),last=fxLast();
+ if(!last){msg.textContent='Tunggu harga termuat dulu.';return}
+ if(!isFinite(p)||p<=0){msg.textContent='Masukkan angka level harga, misalnya 4150.';return}
+ if(Math.abs(p-last.c)<.01){msg.textContent='Level sama dengan harga sekarang.';return}
+ if(FXA.list.length>=5){msg.textContent='Maksimal 5 alert aktif.';return}
+ FXA.list.push({id:uid(),p,dir:p>last.c?'up':'down',ts:fxNow().ms});fxAlSave();inp.value='';msg.textContent='';
+ try{FX.ac=FX.ac||new(window.AudioContext||window.webkitAudioContext)()}catch{}
+ try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch{}
+ fxAlRender();fxDraw();
+};
+$('#fxap').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#fxaa').click()}});
+function fxAlCheck(){
+ if(!FX.data||!FXA.list.length)return;
+ const v=FX.data.values,tm=FXTF.find(x=>x[0]===FX.tf)[2]*6e4,hit=[];
+ FXA.list=FXA.list.filter(a=>{let ok=false;for(const c of v){const s=fxP(c.t);if(s>a.ts)ok=a.dir==='up'?c.h>=a.p:c.l<=a.p;else if(s+tm>a.ts)ok=a.dir==='up'?c.c>=a.p:c.c<=a.p;if(ok)break}if(ok)hit.push(a);return!ok});
+ if(hit.length){fxAlSave();const px=v[v.length-1].c;hit.forEach(a=>fxFire(a,px));fxAlRender();fxDraw()}
+}
+function fxFire(a,px){
+ const msg='Alert XAU/USD: harga '+(a.dir==='up'?'naik ke ≥ ':'turun ke ≤ ')+fxNum(a.p)+' (sekarang '+fxNum(px)+')';
+ const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(FX.tt);FX.tt=setTimeout(()=>{t.hidden=true},25000);
+ try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch{}
+ try{const c=FX.ac;if(c){c.resume&&c.resume();[0,.22].forEach(s=>{const o=c.createOscillator(),gn=c.createGain();o.frequency.value=880;gn.gain.value=.12;o.connect(gn);gn.connect(c.destination);o.start(c.currentTime+s);o.stop(c.currentTime+s+.15)})}}catch{}
+ try{if('Notification' in window&&Notification.permission==='granted')new Notification('Alert XAU/USD',{body:msg})}catch{}
+}
+$('#toast').onclick=()=>{$('#toast').hidden=true};
+
+// --- analisa AI (angka dihitung di browser, AI hanya menafsirkan) ---
+function fxPack(){
+ const d=FX.data,v=d.values,n=v.length,last=v[n-1],tm=FXTF.find(x=>x[0]===FX.tf),k=FX.calc||{},now=fxNow(),mk=fxMarket();
+ const f=x=>x==null?'n/a':fxNum(x),px=last.c,e20=k.e20&&k.e20[n-1],e50=k.e50&&k.e50[n-1],rs=k.rsi&&k.rsi[n-1],atr=k.atr;
+ const hi=Math.max(...v.map(x=>x.h)),lo=Math.min(...v.map(x=>x.l)),ch=px-v[0].o,lv=fxLevels(v,px,atr);
+ const late=(now.ms-fxP(last.t))/6e4>tm[2]*2+10;
+ const status=!mk.open?'Pasar tutup (akhir pekan). Data adalah penutupan terakhir.':late?'Data tertunda. Candle terakhir '+fxT(last.t,true)+' WIB.':'Data segar.';
+ const rel=[e20!=null?'harga '+(px>=e20?'di atas':'di bawah')+' EMA20':null,e50!=null?'harga '+(px>=e50?'di atas':'di bawah')+' EMA50':null,e20!=null&&e50!=null?'EMA20 '+(e20>=e50?'di atas':'di bawah')+' EMA50':null,rs!=null?'RSI '+(rs>=70?'jenuh beli (>=70)':rs<=30?'jenuh jual (<=30)':'netral (30-70)'):null].filter(Boolean).join('; ');
+ const ev=NW.filter(e=>e.wib>now.ms&&e.wib-now.ms<=48*36e5).map(e=>{const w=nwDt(e.wib);return'- '+w.dow+' '+w.d+' '+w.mo+' '+w.hm+' WIB: '+e.n});
+ const ctx=['Instrumen: XAU/USD (emas spot). Rentang candle: '+tm[1]+'. Zona waktu: WIB.',
+  'Waktu analisa: '+now.txt.slice(0,5)+' WIB. Harga terakhir: '+fxNum(px)+' (candle '+fxT(last.t,true)+').',
+  'Status data: '+status,
+  'Jumlah candle: '+n+' (dari '+fxT(v[0].t,true)+' sampai '+fxT(last.t,true)+').',
+  'Rentang data: tertinggi '+fxNum(hi)+', terendah '+fxNum(lo)+', perubahan dari pembukaan pertama '+(ch>=0?'+':'-')+fxNum(Math.abs(ch))+' ('+(ch>=0?'+':'-')+Math.abs(ch/v[0].o*100).toFixed(2)+'%).',
+  'Indikator (dihitung di aplikasi): EMA20 '+f(e20)+', EMA50 '+f(e50)+', RSI14 '+(rs==null?'n/a':rs.toFixed(1))+', ATR14 '+f(atr)+'.',
+  'Posisi: '+(rel||'data kurang untuk indikator')+'.',
+  'Level swing terdekat: resistance '+(lv.res.length?lv.res.map(x=>fxNum(x)).join(', '):'tidak terdeteksi')+'; support '+(lv.sup.length?lv.sup.map(x=>fxNum(x)).join(', '):'tidak terdeteksi')+'.',
+  ev.length?'Event high impact 48 jam ke depan:\n'+ev.join('\n'):'Tidak ada event high impact dalam 48 jam ke depan (menurut daftar Jadwal News).'].join('\n');
+ const candles=v.slice(-30).map(c=>fxT(c.t,true)+' O'+c.o.toFixed(2)+' H'+c.h.toFixed(2)+' L'+c.l.toFixed(2)+' C'+c.c.toFixed(2)).join('\n');
+ return{ctx,prompt:ctx+'\n\n30 candle terakhir (waktu WIB):\n'+candles,tfLabel:tm[1],time:now.txt.slice(0,5),meta:'XAU/USD · '+tm[1]+' · '+now.txt.slice(0,5)+' WIB · harga '+fxNum(px)+(!mk.open?' · pasar tutup':late?' · data tertunda':'')};
+}
+const fxClean=t=>t.replace(/<think>[\s\S]*?(<\/think>|$)/gi,'').trim();
+async function fxAi(messages,onText,signal){
+ const res=await fetch(API+'/api/chat',{method:'POST',signal,headers:{'Content-Type':'application/json',...auth()},body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),messages})});
+ if(!res.ok){const e=await readErr(res);if(e.code==='session_invalid'||e.code==='http_401'){ls.set('tok',null);showLock()}throw new ApiErr(e)}
+ let out='';
+ if((res.headers.get('content-type')||'').includes('event-stream')){
+  const rd=res.body.getReader(),dec=new TextDecoder();let buf='';
+  for(;;){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+   for(const l of lines){if(!l.startsWith('data:'))continue;const p=l.slice(5).trim();if(!p||p==='[DONE]')continue;let j;try{j=JSON.parse(p)}catch{continue}
+    if(j.error)throw new ApiErr({code:'upstream_stream_error',source:'upstream',message:'Provider mengirim error di tengah stream: '+String(j.error.message||JSON.stringify(j.error)).slice(0,300),hint:'Coba lagi atau ganti model.'});
+    out+=j.choices?.[0]?.delta?.content??j.delta?.text??''}
+   if(out)onText(out)}
+ }else{
+  const j=await res.json();
+  if(j.error)throw new ApiErr({code:'upstream_body_error',source:'upstream',message:String(j.error.message||JSON.stringify(j.error)).slice(0,300),hint:'Cek model dan API key.'});
+  out=j.choices?.[0]?.message?.content??j.content?.[0]?.text??j.reply??j.text??'';onText(out)
+ }
+ return out;
+}
+async function fxAnalyze(){
+ if(FX.aiCtl){FX.aiCtl.abort();return}
+ const box=$('#fxar'),btn=$('#fxab');
+ if(!FX.data){box.innerHTML=errBox({source:'client',code:'no_data',message:'Data grafik belum termuat.',hint:'Tunggu grafik tampil, lalu coba lagi.'});return}
+ const pack=fxPack();FX.aiCtl=new AbortController();btn.textContent='Batal';FX.ai=null;
+ box.innerHTML='<div class="fxam">'+esc(pack.meta)+'</div><div class="fxab b"><span class="dots"><i></i><i></i><i></i></span></div>';
+ const body=box.querySelector('.fxab');let out='';
+ const fin=()=>{
+  body.innerHTML=md(out,true);FX.ai={text:out,pack};
+  box.insertAdjacentHTML('beforeend','<div class="fxact"><button type="button" class="sec" data-a="copy">Salin</button><button type="button" class="sec" data-a="chat">Lanjut tanya di obrolan</button></div><div class="fxam">Tafsiran AI dari data di atas, bisa keliru dan bukan saran investasi.</div>');
+ };
+ try{
+  await fxAi([{role:'system',content:FXSYS},{role:'user',content:pack.prompt}],t=>{out=fxClean(t);if(out)body.innerHTML=md(out,false)},FX.aiCtl.signal);
+  if(!out.trim())throw new ApiErr({code:'empty_reply',source:'upstream',message:'AI membalas kosong.',hint:'Coba lagi atau ganti model di sidebar.'});
+  fin();
+ }catch(e){
+  if(e.name==='AbortError'){if(out.trim())fin();else box.innerHTML=''}
+  else{const info=toInfo(e);console.error('[analisa]',info,e);box.innerHTML=errBox(info)}
+ }finally{FX.aiCtl=null;btn.textContent='Analisa'}
+}
+$('#fxab').onclick=fxAnalyze;
+$('#fxar').onclick=e=>{
+ const b=e.target.closest('button[data-a]');if(!b||!FX.ai)return;
+ if(b.dataset.a==='copy'){const t=FX.ai.text;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{b.textContent='Tersalin'}).catch(()=>{b.textContent='Gagal menyalin'});setTimeout(()=>{b.textContent='Salin'},1800)}
+ else if(b.dataset.a==='chat'){
+  const a=FX.ai,show='Analisa XAU/USD · '+a.pack.tfLabel+' · '+a.pack.time+' WIB';
+  cur={id:uid(),ts:Date.now(),title:show.slice(0,40),msgs:[{role:'user',content:'(Konteks: analisa teknikal XAU/USD, jawab ringkas dalam bahasa Indonesia.)\n'+a.pack.ctx+'\n\nTolong analisa kondisi XAU/USD dari data di atas.',show},{role:'assistant',content:a.text}]};
+  chats.unshift(cur);save();fxClose();nwClose();renderList();renderChat();document.body.classList.remove('open');$('#in').focus();
+ }
+};
+
 // ===== Jadwal news high impact (data statis, dicek ke situs resmi pada 6 Okt 2026) =====
 // Sumber: The Fed (FOMC), BLS (NFP, CPI), BEA (Core PCE, PDB), ECB, BoE, BoJ. Tanggal bisa bergeser (libur, government shutdown).
 // Format: [tanggal lokal, jam lokal, zona, jenis, negara, judul, keterangan, jam perkiraan?]
