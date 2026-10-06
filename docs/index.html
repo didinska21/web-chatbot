@@ -942,7 +942,7 @@ function fxStyleSync(){
  $('#fxsti').textContent='Membaca rentang '+st.tfs.map(t=>FXTF.find(x=>x[0]===t)[1]).join(', ')+' · penilaian dalam '+st.hor+' jam · sekitar '+st.tfs.filter(t=>t!==FX.tf).length+' kredit tambahan';
 }
 [['scalp','Scalping'],['intra','Intraday'],['swing','Swing']].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{FX.style=k;ls.set('fxst',k);fxStyleSync()};$('#fxstl').appendChild(b)});
-fxStyleSync();fxHRender();
+try{fxStyleSync();fxHRender()}catch(e){console.error('[init riwayat]',e)}
 $('#fxab').onclick=fxAnalyze;
 $('#fxar').onclick=e=>{
  const b=e.target.closest('button[data-a]');if(!b||!FX.ai)return;
@@ -986,7 +986,7 @@ const NWD=['Min','Sen','Sel','Rab','Kam','Jum','Sab'],NWM=['Jan','Feb','Mar','Ap
 function nwWall(u,z){const o={};new Intl.DateTimeFormat('en-GB',{timeZone:z,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(u)).forEach(x=>o[x.type]=x.value);return Date.UTC(+o.year,o.month-1,+o.day,+o.hour,+o.minute)}
 function nwUtc(d,t,z){const [y,m,dd]=d.split('-').map(Number),[h,mi]=t.split(':').map(Number),want=Date.UTC(y,m-1,dd,h,mi);let u=want;for(let i=0;i<3;i++)u+=want-nwWall(u,z);return u}
 const NW=NWV.map(([d,t,z,k,c,n,s,ap])=>{const u=nwUtc(d,t,NWZ[z][0]);return{u,wib:u+7*36e5,d,t,z,k,c,n,s,ap:!!ap}}).sort((a,b)=>a.u-b.u);
-const nwDt=w=>{const x=new Date(w);return{d:x.getUTCDate(),dow:NWD[x.getUTCDay()],mo:NWM[x.getUTCMonth()],mf:NWMF[x.getUTCMonth()]+' '+x.getUTCFullYear(),hm:String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0'),key:x.getUTCFullYear()*100+x.getUTCMonth()}};
+function nwDt(w){const x=new Date(w);return{d:x.getUTCDate(),dow:NWD[x.getUTCDay()],mo:NWM[x.getUTCMonth()],mf:NWMF[x.getUTCMonth()]+' '+x.getUTCFullYear(),hm:String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0'),key:x.getUTCFullYear()*100+x.getUTCMonth()}}
 let NWS={f:['all','fed','us','cb'].includes(ls.get('nwf',''))?ls.get('nwf',''):'all',tick:0,at:0};
 [['all','Semua'],['fed',NWC.fed],['us',NWC.us],['cb',NWC.cb]].forEach(([k,nm])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.textContent=nm;b.onclick=()=>{NWS.f=k;ls.set('nwf',k);nwRender()};$('#nwf').appendChild(b)});
 function nwList(){const now=fxNow().ms,day0=Math.floor(now/864e5)*864e5;return NW.filter(e=>(NWS.f==='all'||e.k===NWS.f)&&e.wib>=day0).map(e=>({...e,past:e.wib<now,soon:e.wib>=now&&e.wib-now<864e5}))}
@@ -1013,4 +1013,7 @@ function nwOpen(){fxClose();document.body.classList.add('nwon');$('#navnw').clas
 function nwClose(){if(!document.body.classList.contains('nwon'))return;document.body.classList.remove('nwon');$('#navnw').classList.remove('on');clearInterval(NWS.tick)}
 $('#navnw').onclick=()=>{if(document.body.classList.contains('nwon')){document.body.classList.remove('open');return}nwOpen()};
 fillModels([],'');
-fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sy
+fetch(API+'/api/session',{headers:auth()}).then(r=>{if(r.status===401)showLock();else{sync();loadModels()}}).catch(e=>console.warn('[session] tidak bisa menghubungi Worker',e));
+renderList();renderChat();
+</script>
+</body></html>
