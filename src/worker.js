@@ -187,8 +187,8 @@ async function models(request, env, rid) {
 // ===== Grafik emas / forex (Twelve Data) =====
 // API key Twelve Data disimpan di Secret TWELVEDATA_KEY, tidak pernah dikirim ke browser.
 const FX_SYMBOLS = ["XAU/USD"];
-// Lama hasil disimpan di memori Worker (detik). Tujuannya menghemat kuota Twelve Data (paket gratis: 8/menit, 800/hari).
-const FX_TTL = { "1min": 45, "5min": 90, "15min": 240, "1h": 600, "4h": 1800, "1day": 3600 };
+// Lama hasil disimpan di memori Worker (detik). Menghindari panggilan ganda ke Twelve Data (paket gratis: 8/menit, 800/hari).
+const FX_TTL = { "1min": 50, "5min": 50, "15min": 50, "1h": 50, "4h": 120, "1day": 300 }; // detik; browser memeriksa tiap 60 dtk
 const fxCache = new Map(); // best-effort: hidup selama isolate Worker masih aktif
 const FX_HINTS = {
   400: "Simbol atau parameter ditolak Twelve Data.",
