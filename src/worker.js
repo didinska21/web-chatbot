@@ -37,18 +37,68 @@ function safeEq(a, b) {
   return r === 0;
 }
 
-async function makeToken(secret) {
-  const exp = Date.now() + 7 * 864e5; // berlaku 7 hari
-  return exp + "." + (await sign(String(exp), secret));
+// Token v2: peran.exp.kode.tanda-tangan. Token pemilik ikut terikat ke PIN, jadi ganti PIN = semua sesi pemilik langsung keluar.
+const pinOf = env => String(env.PIN || "").trim();
+const keyOf = (env, role) => env.SESSION_SECRET + (role === "owner" ? "|" + pinOf(env) : "");
+async function makeToken(env, role, exp, cid = "-") {
+  const msg = `${role}.${exp}.${cid}`;
+  return msg + "." + (await sign(msg, keyOf(env, role)));
+}
+// Token dikirim lewat header Authorization: Bearer <token>
+async function readToken(request, env) {
+  const m = /^Bearer (.+)$/.exec(request.headers.get("Authorization") || "");
+  if (!m || !env.SESSION_SECRET) return null;
+  const p = m[1].split(".");
+  if (p.length !== 4) return null;
+  const [role, exp, cid, sig] = p;
+  if (role !== "owner" && role !== "guest") return null;
+  if (!(Number(exp) > Date.now())) return null; // NaN juga ditolak
+  if (!safeEq(sig, await sign(`${role}.${exp}.${cid}`, keyOf(env, role)))) return null;
+  return { role, exp: Number(exp), cid };
 }
 
-// Token dikirim lewat header Authorization: Bearer <token>
-async function isLoggedIn(request, secret) {
-  const m = /^Bearer (.+)$/.exec(request.headers.get("Authorization") || "");
-  if (!m || !secret) return false;
-  const [exp, sig] = m[1].split(".");
-  if (!exp || !sig || Number(exp) < Date.now()) return false;
-  return safeEq(sig, await sign(exp, secret));
+// ===== Kode tamu (disimpan di KV "CHATS" dengan awalan code:) =====
+const trialMs = env => (Number(env.GUEST_TRIAL_MIN) || 60) * 60e3;
+const codeValidMs = env => (Number(env.GUEST_CODE_HOURS) || 24) * 3600e3;
+const codeCache = new Map(); // kode -> { t, rec }, hanya menghemat pembacaan KV
+async function getCode(env, code, fresh) {
+  const c = codeCache.get(code);
+  if (!fresh && c && Date.now() - c.t < 15000) return c.rec;
+  const rec = env.CHATS ? await env.CHATS.get("code:" + code, "json") : null;
+  codeCache.set(code, { t: Date.now(), rec });
+  return rec;
+}
+async function putCode(env, code, rec) {
+  const ttl = rec.redeemed ? Math.ceil((rec.trialEnd - Date.now()) / 1000) + 86400 : Math.ceil((rec.expires - Date.now()) / 1000) + 3600;
+  await env.CHATS.put("code:" + code, JSON.stringify(rec), { expirationTtl: Math.max(120, ttl) });
+  codeCache.set(code, { t: Date.now(), rec });
+}
+// Batas pemakaian tamu (di memori Worker, best-effort) supaya kuota API-mu tidak terkuras.
+const GUEST_MAX = { chat: 60, forex: 200 };
+const guestUse = new Map();
+function guestCap(au, kind) {
+  if (au.role !== "guest") return;
+  const k = au.cid + "|" + kind, n = (guestUse.get(k) || 0) + 1;
+  guestUse.set(k, n);
+  if (n > GUEST_MAX[kind]) throw new AppError(429, "guest_limit", "auth", "Batas pemakaian trial tercapai.", "Minta akses penuh ke pemilik.");
+}
+
+// ===== Batas percobaan login: 8 kali salah per IP = diblokir 10 menit (di memori Worker) =====
+const loginFails = new Map();
+function loginBlocked(ip) {
+  const r = loginFails.get(ip), now = Date.now();
+  if (!r) return 0;
+  if (r.until && r.until > now) return Math.ceil((r.until - now) / 1000);
+  if (now - r.first > 600e3 || r.until) loginFails.delete(ip);
+  return 0;
+}
+function loginFail(ip) {
+  const now = Date.now();
+  let r = loginFails.get(ip);
+  if (!r || now - r.first > 600e3) r = { n: 0, first: now };
+  if (++r.n >= 8) r.until = now + 600e3;
+  loginFails.set(ip, r);
+  if (loginFails.size > 5000) for (const [k, v] of loginFails) if (now - v.first > 600e3) loginFails.delete(k);
 }
 
 // ===== CORS =====
@@ -87,12 +137,20 @@ function upstreamUrl(env, kind) {
   if (kind === "models") u.pathname = u.pathname.replace(/\/chat\/completions\/?$/, "").replace(/\/$/, "") + "/models";
   return u.toString();
 }
-async function requireAuth(request, env, rid) {
+async function requireAuth(request, env, rid, ownerOnly = false) {
   need(env, ["SESSION_SECRET"]);
-  if (!(await isLoggedIn(request, env.SESSION_SECRET))) {
+  const au = await readToken(request, env);
+  if (!au) {
     log("warn", rid, "auth_fail", { hasHeader: !!request.headers.get("Authorization") });
     throw new AppError(401, "session_invalid", "auth", "Sesi habis atau tidak valid.", "Masukkan PIN lagi.");
   }
+  if (au.role === "guest") {
+    const rec = await getCode(env, au.cid);
+    if (!rec || rec.revoked || !rec.trialEnd || Date.now() >= rec.trialEnd)
+      throw new AppError(401, "session_invalid", "auth", "Trial tamu sudah berakhir atau kodenya dicabut.", "Minta kode baru ke pemilik.");
+  }
+  if (ownerOnly && au.role !== "owner") throw new AppError(403, "forbidden", "auth", "Fitur ini hanya untuk pemilik.");
+  return au;
 }
 
 // ===== Panggilan ke provider API =====
@@ -141,24 +199,93 @@ const modelIds = j => ((j && (j.data || j.models)) || []).map(m => typeof m === 
 // ===== Endpoint =====
 async function login(request, env, rid) {
   need(env, ["PIN", "SESSION_SECRET"]);
+  const ip = request.headers.get("CF-Connecting-IP") || "?";
+  const wait = loginBlocked(ip);
+  if (wait) throw new AppError(429, "too_many_attempts", "auth", `Terlalu banyak percobaan salah. Coba lagi dalam ${Math.ceil(wait / 60)} menit.`, "", { retry_after: wait });
   const { pin } = await request.json().catch(() => ({}));
-  await new Promise(r => setTimeout(r, 600)); // perlambat tebak-tebakan PIN
-  if (!safeEq(String(pin || ""), String(env.PIN))) {
-    log("warn", rid, "login_failed", { ip: request.headers.get("CF-Connecting-IP") || "" });
-    throw new AppError(401, "pin_wrong", "auth", "PIN salah.");
+  const input = String(pin ?? "").trim();
+  await new Promise(r => setTimeout(r, 600)); // perlambat tebak-tebakan
+  if (input && safeEq(input, pinOf(env))) {
+    loginFails.delete(ip);
+    log("info", rid, "login_ok", { role: "owner" });
+    return json({ ok: true, role: "owner", token: await makeToken(env, "owner", Date.now() + 7 * 864e5) });
   }
-  log("info", rid, "login_ok");
-  return json({ ok: true, token: await makeToken(env.SESSION_SECRET) });
+  const code = input.replace(/[\s-]/g, "");
+  if (/^\d{8}$/.test(code)) {
+    if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang, kode tamu tidak bisa dipakai.", CFG_HINT);
+    const rec = await getCode(env, code, true);
+    const bad = (c, m) => { loginFail(ip); log("warn", rid, "code_failed", { code: c, tail: code.slice(-2) }); return new AppError(401, c, "auth", m); };
+    if (!rec || rec.revoked) throw bad("code_invalid", "Kode tidak dikenal atau sudah dicabut.");
+    if (!rec.redeemed) {
+      if (Date.now() > rec.expires) throw bad("code_expired", "Kode ini sudah kedaluwarsa. Minta kode baru ke pemilik.");
+      rec.redeemed = Date.now();
+      rec.trialEnd = rec.redeemed + (rec.trialMs || trialMs(env));
+      await putCode(env, code, rec);
+    } else if (Date.now() >= rec.trialEnd) {
+      throw bad("trial_over", "Trial untuk kode ini sudah habis. Minta kode baru ke pemilik.");
+    }
+    loginFails.delete(ip);
+    log("info", rid, "login_ok", { role: "guest", tail: code.slice(-2) });
+    return json({ ok: true, role: "guest", exp: rec.trialEnd, token: await makeToken(env, "guest", rec.trialEnd, code) });
+  }
+  loginFail(ip);
+  log("warn", rid, "login_failed", { ip });
+  throw new AppError(401, "pin_wrong", "auth", "PIN salah.");
 }
 
-async function session(request, env) {
-  const ok = await isLoggedIn(request, env.SESSION_SECRET);
-  return new Response(null, { status: ok ? 204 : 401 });
+async function session(request, env, rid) {
+  try {
+    const au = await requireAuth(request, env, rid);
+    return json({ ok: true, role: au.role, exp: au.exp });
+  } catch (e) {
+    if (e instanceof AppError && e.status === 401) return new Response(null, { status: 401 });
+    throw e;
+  }
+}
+
+// ===== Kelola kode tamu (khusus pemilik) =====
+async function adminCodes(request, env, rid) {
+  await requireAuth(request, env, rid, true);
+  if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang.", CFG_HINT);
+  const base = { trialMin: Math.round(trialMs(env) / 60e3), validHours: Math.round(codeValidMs(env) / 3600e3) };
+  if (request.method === "GET") {
+    const l = await env.CHATS.list({ prefix: "code:", limit: 100 });
+    const codes = (await Promise.all(l.keys.map(async k => {
+      const rec = await env.CHATS.get(k.name, "json");
+      return rec ? { code: k.name.slice(5), ...rec } : null;
+    }))).filter(Boolean).sort((a, b) => b.created - a.created);
+    return json({ ok: true, ...base, now: Date.now(), codes });
+  }
+  const body = await request.json().catch(() => ({}));
+  if (body.action === "create") {
+    let code = "";
+    for (let i = 0; i < 12 && !code; i++) {
+      const b = new Uint32Array(1); crypto.getRandomValues(b);
+      const c = String(10000000 + (b[0] % 90000000)); // 8 digit, tanpa nol di depan
+      if (!(await getCode(env, c, true))) code = c;
+    }
+    if (!code) throw new AppError(500, "code_gen_failed", "worker", "Gagal membuat kode unik.", "Coba lagi.");
+    const rec = { created: Date.now(), expires: Date.now() + codeValidMs(env), trialMs: trialMs(env), redeemed: null, trialEnd: null, revoked: false };
+    await putCode(env, code, rec);
+    log("info", rid, "code_created", { tail: code.slice(-2) });
+    return json({ ok: true, ...base, code, ...rec });
+  }
+  if (body.action === "revoke") {
+    const code = String(body.code || "");
+    if (!/^\d{8}$/.test(code)) throw new AppError(400, "bad_request", "client", "Kode tidak valid.");
+    const rec = await getCode(env, code, true);
+    if (!rec) throw new AppError(404, "not_found", "client", "Kode tidak ditemukan.");
+    if (rec.redeemed && !rec.revoked) { rec.revoked = true; await putCode(env, code, rec); }
+    else { await env.CHATS.delete("code:" + code); codeCache.delete(code); }
+    log("info", rid, "code_revoked", { tail: code.slice(-2) });
+    return json({ ok: true });
+  }
+  throw new AppError(400, "bad_request", "client", "Aksi tidak dikenal.", "Gunakan action: create atau revoke.");
 }
 
 // Riwayat obrolan disimpan di KV (binding CHATS) supaya sama di semua perangkat.
 async function chats(request, env, rid) {
-  await requireAuth(request, env, rid);
+  await requireAuth(request, env, rid, true); // riwayat obrolan pemilik: tamu tidak boleh membaca atau menimpa
   if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang.", "Deploy ulang Worker (wrangler.jsonc membuat KV otomatis) atau buat KV manual lalu isi \"id\" di wrangler.jsonc.");
   if (request.method === "GET") {
     let v;
@@ -198,7 +325,7 @@ const FX_HINTS = {
   429: "Kuota Twelve Data habis (paket gratis: 8 permintaan per menit, 800 per hari). Tunggu sebentar lalu coba lagi.",
 };
 async function forex(request, env, rid) {
-  await requireAuth(request, env, rid);
+  guestCap(await requireAuth(request, env, rid), "forex");
   need(env, ["TWELVEDATA_KEY"]);
   const q = new URL(request.url).searchParams;
   const symbol = q.get("symbol") || "XAU/USD", interval = q.get("interval") || "5min";
@@ -253,7 +380,7 @@ async function forex(request, env, rid) {
 
 // Pemeriksaan satu per satu: Secret, KV, origin, dan koneksi ke provider.
 async function diag(request, env, rid) {
-  await requireAuth(request, env, rid);
+  await requireAuth(request, env, rid, true);
   const checks = [];
   const add = (name, ok, detail) => checks.push({ name, ok, detail });
   add("PIN", !!env.PIN, env.PIN ? "terisi" : "belum diisi");
@@ -294,7 +421,7 @@ async function diag(request, env, rid) {
 }
 
 async function chat(request, env, rid) {
-  await requireAuth(request, env, rid);
+  guestCap(await requireAuth(request, env, rid), "chat");
   need(env, ["API_URL", "API_KEY"]);
   checkApiUrl(env);
   let body;
@@ -338,11 +465,12 @@ export default {
     let res;
     try {
       if (p === "/api/login" && m === "POST") res = await login(request, env, rid);
-      else if (p === "/api/session" && m === "GET") res = await session(request, env);
+      else if (p === "/api/session" && m === "GET") res = await session(request, env, rid);
       else if (p === "/api/chat" && m === "POST") res = await chat(request, env, rid);
       else if (p === "/api/chats" && (m === "GET" || m === "PUT")) res = await chats(request, env, rid);
       else if (p === "/api/models" && m === "GET") res = await models(request, env, rid);
       else if (p === "/api/forex" && m === "GET") res = await forex(request, env, rid);
+      else if (p === "/api/admin/codes" && (m === "GET" || m === "POST")) res = await adminCodes(request, env, rid);
       else if (p === "/api/diag" && m === "GET") res = await diag(request, env, rid);
       else throw new AppError(404, "not_found", "worker", `Path tidak dikenal: ${m} ${p}`, "Cek alamat API di docs/index.html.");
     } catch (e) {
