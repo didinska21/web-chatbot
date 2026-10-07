@@ -420,8 +420,81 @@ async function diag(request, env, rid) {
   return json({ ok: checks.every(c => c.ok), checks, rid });
 }
 
-async function chat(request, env, rid) {
-  guestCap(await requireAuth(request, env, rid), "chat");
+// ===== Penalaran panjang (analisa AI) =====
+// Parameter penalaran dikirim bertahap: kalau provider menolak (HTTP 400/422), dicoba lagi dengan parameter lebih sederhana, lalu tanpa parameter.
+// Bisa diganti lewat Secret REASONING_HIGH / REASONING_MAX berisi JSON, contoh: {"reasoning":{"effort":"high"},"max_tokens":64000}
+function reasoningTries(env, depth) {
+  if (depth !== "high" && depth !== "max") return [];
+  const raw = depth === "max" ? env.REASONING_MAX : env.REASONING_HIGH;
+  if (raw) {
+    try { const o = JSON.parse(raw); if (o && typeof o === "object" && !Array.isArray(o)) return [o]; } catch {}
+    log("warn", "-", "reasoning_env_invalid", { depth });
+  }
+  const host = new URL(env.API_URL).host;
+  if (host.includes("openrouter.ai"))
+    return depth === "max" ? [{ reasoning: { effort: "high" }, max_tokens: 64000 }, { reasoning: { effort: "high" } }] : [{ reasoning: { effort: "high" } }];
+  return [{ reasoning_effort: "high" }];
+}
+// Respons dikembalikan langsung (SSE) dan dijaga tetap hidup dengan ": ping" selama AI berpikir, tanpa batas 60 detik.
+function longChat(env, rid, ctx, body, model, extras) {
+  const { readable, writable } = new TransformStream(), w = writable.getWriter(), enc = new TextEncoder();
+  let boundary = true; // ping hanya disisipkan di antara event SSE, tidak di tengah event
+  const raw = s => w.write(enc.encode(s)).catch(() => {});
+  const ev = o => raw("data: " + JSON.stringify(o) + "\n\n");
+  const job = (async () => {
+    const ping = setInterval(() => { if (boundary) raw(": ping\n\n"); }, 8000);
+    const t0 = Date.now(), host = new URL(env.API_URL).host;
+    try {
+      raw(": start\n\n");
+      const tries = [...extras, {}];
+      let res = null, used = -1;
+      for (let i = 0; i < tries.length; i++) {
+        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20 * 60e3);
+        try {
+          res = await fetch(env.API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.API_KEY },
+            body: JSON.stringify({ ...body, model, ...tries[i] }),
+            signal: ctl.signal,
+          });
+        } finally { clearTimeout(timer); }
+        log(res.ok ? "info" : "warn", rid, "upstream", { label: "chat-long", host, status: res.status, ms: Date.now() - t0, attempt: i });
+        if (res.ok) { used = i; break; }
+        if ((res.status === 400 || res.status === 422) && i < tries.length - 1) continue;
+        break;
+      }
+      if (!res.ok) {
+        const e = await upstreamError(res, rid, "chat");
+        ev({ error: { message: e.message, code: e.code, hint: e.hint } });
+        return;
+      }
+      ev({ meta: { think: used < extras.length ? "param" : "none", attempt: used } });
+      if ((res.headers.get("content-type") || "").includes("event-stream")) {
+        const rd = res.body.getReader();
+        for (;;) {
+          const { done, value } = await rd.read();
+          if (done) break;
+          try { await w.write(value); } catch { await rd.cancel().catch(() => {}); break; }
+          const n = value.length;
+          boundary = n > 1 && value[n - 1] === 10 && (value[n - 2] === 10 || (value[n - 2] === 13 && n > 2 && value[n - 3] === 10));
+        }
+      } else {
+        const j = await res.json().catch(() => null);
+        ev({ choices: [{ delta: { content: (j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "" } }] });
+        raw("data: [DONE]\n\n");
+      }
+    } catch (e) {
+      const timeout = e && e.name === "AbortError";
+      log("error", rid, "upstream_fail", { label: "chat-long", host, timeout, msg: String((e && e.message) || e) });
+      ev({ error: { message: timeout ? "Provider API tidak menjawab dalam 20 menit." : "Worker tidak bisa menghubungi provider API.", code: timeout ? "upstream_timeout" : "upstream_unreachable", hint: "Coba lagi atau turunkan kedalaman berpikir." } });
+    } finally { clearInterval(ping); w.close().catch(() => {}); }
+  })();
+  if (ctx && ctx.waitUntil) ctx.waitUntil(job);
+  return new Response(readable, { status: 200, headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" } });
+}
+async function chat(request, env, rid, ctx) {
+  const au = await requireAuth(request, env, rid);
+  guestCap(au, "chat");
   need(env, ["API_URL", "API_KEY"]);
   checkApiUrl(env);
   let body;
@@ -430,7 +503,11 @@ async function chat(request, env, rid) {
   if (!body || !Array.isArray(body.messages) || !body.messages.length) throw new AppError(400, "bad_request", "client", "Field 'messages' kosong atau bukan array.");
   const model = body.model || env.MODEL;
   if (!model) throw new AppError(500, "config_missing", "config", "MODEL belum diisi.", "Isi Secret MODEL atau pilih model di sidebar.", { missing: ["MODEL"] });
-  log("info", rid, "chat", { model, msgs: body.messages.length, stream: !!body.stream, chars: JSON.stringify(body.messages).length });
+  const long = body.longThink === true && body.stream === true;
+  const depth = au.role === "guest" ? "std" : String(body.depth || "std"); // tamu selalu standar, supaya kuota pemilik aman
+  delete body.longThink; delete body.depth;
+  log("info", rid, "chat", { model, msgs: body.messages.length, stream: !!body.stream, chars: JSON.stringify(body.messages).length, long, depth });
+  if (long) return longChat(env, rid, ctx, body, model, reasoningTries(env, depth));
   const res = await callUpstream(rid, env.API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.API_KEY },
@@ -443,7 +520,7 @@ async function chat(request, env, rid) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const rid = crypto.randomUUID().slice(0, 8);
     const t0 = Date.now();
     const p = new URL(request.url).pathname, m = request.method;
@@ -466,7 +543,7 @@ export default {
     try {
       if (p === "/api/login" && m === "POST") res = await login(request, env, rid);
       else if (p === "/api/session" && m === "GET") res = await session(request, env, rid);
-      else if (p === "/api/chat" && m === "POST") res = await chat(request, env, rid);
+      else if (p === "/api/chat" && m === "POST") res = await chat(request, env, rid, ctx);
       else if (p === "/api/chats" && (m === "GET" || m === "PUT")) res = await chats(request, env, rid);
       else if (p === "/api/models" && m === "GET") res = await models(request, env, rid);
       else if (p === "/api/forex" && m === "GET") res = await forex(request, env, rid);
