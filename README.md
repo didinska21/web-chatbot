@@ -33,6 +33,8 @@ web-chatbot/
 | `API_KEY` | API key |
 | `MODEL` | Nama model, misalnya `openai/gpt-oss-120b` |
 | `TWELVEDATA_KEY` | API key Twelve Data untuk menu Grafik XAU/USD (opsional, hanya dipakai Worker) |
+| `GUEST_TRIAL_MIN` | Opsional. Lama trial kode tamu dalam menit (bawaan 60) |
+| `GUEST_CODE_HOURS` | Opsional. Masa berlaku kode tamu yang belum dipakai dalam jam (bawaan 24) |
 | `ALLOWED_ORIGINS` | Opsional. Daftar domain frontend, pisahkan koma. Default: `https://didinska.my.id,https://www.didinska.my.id` |
 
 ### 2. Tampilan (GitHub Pages)
@@ -77,3 +79,7 @@ Kalau alamat Worker berubah, ubah konstanta `API` di `docs/index.html`.
 | "Tidak bisa terhubung ke server" | Alamat `API` di `docs/index.html` salah, atau domain frontend belum ada di `ALLOWED_ORIGINS` |
 | Error 401 saat chat | Sesi habis. Masukkan PIN lagi |
 | Jawaban kosong atau error 4xx/5xx | Periksa `API_URL`, `API_KEY`, `MODEL` |
+
+## Kode tamu
+
+Login pemilik memakai PIN. Dari menu **Kode tamu** (hanya tampil untuk pemilik) kamu bisa membuat kode 8 digit untuk orang lain. Kode dimasukkan di kolom PIN. Trial berjalan sejak kode pertama kali dipakai, lalu sesi tamu otomatis berakhir. Tamu tidak bisa membuka riwayat obrolan pemilik, menu Diagnosa, atau menu Kode tamu. Kode disimpan di KV `CHATS`, jadi binding KV wajib ada. Mengganti `PIN` langsung mengeluarkan semua sesi pemilik.
