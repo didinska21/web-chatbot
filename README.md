@@ -35,6 +35,7 @@ web-chatbot/
 | `TWELVEDATA_KEY` | API key Twelve Data untuk menu Grafik XAU/USD (opsional, hanya dipakai Worker) |
 | `GUEST_TRIAL_MIN` | Opsional. Lama trial kode tamu dalam menit (bawaan 60) |
 | `GUEST_CODE_HOURS` | Opsional. Masa berlaku kode tamu yang belum dipakai dalam jam (bawaan 24) |
+| `REASONING_HIGH` / `REASONING_MAX` | Opsional. JSON yang digabung ke permintaan analisa AI saat kedalaman berpikir Tinggi / Maksimal, contoh `{"reasoning":{"effort":"high"},"max_tokens":64000}` atau `{"thinking":{"type":"enabled","budget_tokens":30000},"max_tokens":48000}`. Kalau kosong, dipilih otomatis dari alamat `API_URL` |
 | `ALLOWED_ORIGINS` | Opsional. Daftar domain frontend, pisahkan koma. Default: `https://didinska.my.id,https://www.didinska.my.id` |
 
 ### 2. Tampilan (GitHub Pages)
@@ -83,3 +84,7 @@ Kalau alamat Worker berubah, ubah konstanta `API` di `docs/index.html`.
 ## Kode tamu
 
 Login pemilik memakai PIN. Dari menu **Kode tamu** (hanya tampil untuk pemilik) kamu bisa membuat kode 8 digit untuk orang lain. Kode dimasukkan di kolom PIN. Trial berjalan sejak kode pertama kali dipakai, lalu sesi tamu otomatis berakhir. Tamu tidak bisa membuka riwayat obrolan pemilik, menu Diagnosa, atau menu Kode tamu. Kode disimpan di KV `CHATS`, jadi binding KV wajib ada. Mengganti `PIN` langsung mengeluarkan semua sesi pemilik.
+
+## Penalaran panjang (Analisa AI)
+
+Analisa AI memakai jalur khusus tanpa batas 60 detik: Worker langsung membuka stream, menjaga koneksi tetap hidup dengan komentar `: ping`, dan menunggu provider sampai 20 menit. Parameter penalaran dicoba bertahap. Jika provider menolak (HTTP 400/422), Worker mengulang dengan parameter lebih sederhana lalu tanpa parameter, dan kartu analisa menandainya. Akun tamu selalu memakai penalaran standar. Batas dari sisi provider atau model (maksimum token, anggaran berpikir) tidak bisa dilewati oleh skrip.
