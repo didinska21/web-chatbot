@@ -219,6 +219,25 @@ body.open #side{transform:none;box-shadow:var(--sh)}
 body.open #ov{opacity:1;pointer-events:auto}
 .col{padding-top:18px}
 }
+#form{position:relative}
+#rz{height:40px;padding:0 10px;border-radius:14px;color:var(--mu);font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap}#rz:hover{color:var(--tx);background:var(--sf2)}
+#rzm{position:absolute;right:0;bottom:calc(100% + 8px);width:236px;padding:6px;background:var(--sf);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--sh);z-index:8}
+#rzm[hidden]{display:none}
+#rzm h6{margin:0;padding:6px 10px 4px;font-size:12px;color:var(--mu);font-weight:600}
+#rzm button{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;padding:9px 10px;border-radius:10px}#rzm button:hover,#rzm button.on{background:var(--sf2)}
+#rzm button small{display:block;color:var(--mu);font-size:12px}#rzm button.on span{color:var(--a1);font-weight:600}
+.fc{display:flex;align-items:center;gap:6px;margin:.8em 0;padding:8px 8px 8px 10px;border-radius:14px;background:var(--sf2);border:1px solid var(--bd);max-width:480px}.fc:hover{border-color:var(--a1)}
+.fo{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left}
+.fi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--sf);border:1px solid var(--bd);color:var(--a1);flex:none}
+.ft{min-width:0}.ft b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ft small{color:var(--mu);font-size:12.5px}
+.fb{display:flex;gap:4px}.fb button{padding:6px 10px;border-radius:9px;font-size:12.5px;background:var(--sf);border:1px solid var(--bd)}.fb button:hover{border-color:var(--a1)}
+.uf{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.ufc{padding:3px 10px;border-radius:8px;background:var(--sf);border:1px solid var(--bd);font-size:13px}
+#vw{position:fixed;top:0;right:0;bottom:0;width:min(620px,100vw);z-index:40;display:flex;flex-direction:column;background:#14171C;border-left:1px solid var(--bd);box-shadow:var(--sh)}#vw[hidden]{display:none}
+#vwh{display:flex;align-items:center;gap:6px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px 16px;background:var(--sf);border-bottom:1px solid var(--bd)}
+#vwh b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vwh button{padding:6px 12px;border-radius:9px;font-size:13px;background:var(--sf2);border:1px solid var(--bd)}#vwh button:hover{border-color:var(--a1)}
+@media(max-width:760px){.fc{flex-wrap:wrap}.fo{flex:1 1 100%}.fb{width:100%}.fb button{flex:1}}
+#vw pre{flex:1;margin:0;overflow:auto;padding:16px;color:#d6d6e7;font:13px/1.7 ui-monospace,Menlo,Consolas,monospace}
 </style></head>
 <body>
 <div id="lock"><form id="lf" autocomplete="off"><div class="logo">didinska<i>.ai</i></div><p>Masukkan PIN atau kode tamu</p><div class="pw"><input id="pin" name="pin" type="password" placeholder="PIN / kode tamu" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="PIN atau kode tamu"><button type="button" id="pt" aria-label="Tampilkan atau sembunyikan">Lihat</button></div><button id="lb">Masuk</button><div id="le" role="alert"></div></form></div>
@@ -282,9 +301,10 @@ body.open #ov{opacity:1;pointer-events:auto}
 </div></section>
 <div id="scroll"><div id="chat" class="col"></div></div>
 <footer><div id="chips"></div>
-<form id="form"><button type="button" id="clip" aria-label="Lampirkan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.6l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"/></svg></button><input type="file" id="fi" multiple hidden><textarea id="in" rows="1" placeholder="Tulis pesan…" aria-label="Pesan"></textarea><button id="send" disabled>↑</button></form>
+<form id="form"><button type="button" id="clip" aria-label="Lampirkan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.6l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.7 5.7l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"/></svg></button><input type="file" id="fi" multiple hidden><textarea id="in" rows="1" placeholder="Tulis pesan…" aria-label="Pesan"></textarea><button type="button" id="rz" aria-haspopup="true" aria-label="Tingkat reasoning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0012 2z"/></svg><span id="rzl">Mid</span></button><button id="send" disabled>↑</button><div id="rzm" hidden><h6>Reason</h6></div></form>
 <small>AI bisa salah. Cek ulang info penting.</small></footer>
 </main></div>
+<aside id="vw" hidden><div id="vwh"><b id="vwn"></b><button type="button" id="vwcp">Salin</button><button type="button" id="vwdl">Unduh</button><button type="button" id="vwx" aria-label="Tutup">✕</button></div><pre><code id="vwc"></code></pre></aside>
 <div id="dg"><div id="dgc"><b>Diagnosa koneksi</b><pre id="dgt"></pre><button type="button" id="dgx">Tutup</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -313,14 +333,30 @@ let chats=ls.get('chats',[]),gone=ls.get('gone',{}),cur=null,busy=false,ctl=null
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 chats.forEach(c=>{if(!c.id){c.id=uid();c.ts=Date.now()}});
 const SUG=[["Buat skrip","Minta skrip Python, Node.js, atau MQL5. Kodenya lengkap dan siap dijalankan."],["Cari bug","Lampirkan file kode, lalu saya cari letak bug-nya dan beri perbaikannya."],["Jelaskan kode","Tempel atau lampirkan kode, saya jelaskan cara kerjanya dengan bahasa yang mudah."],["Buat proyek","Satu permintaan jadi proyek utuh, semua filenya bisa diunduh sebagai .zip."]];
-const SYS='Kamu asisten coding. Jawab dalam bahasa Indonesia, ringkas dan teknis. Berikan kode lengkap yang siap dijalankan, jangan dipotong dengan tanda titik-titik. Tulis setiap file dalam blok kode terpisah dengan format ```bahasa:namafile.ext (contoh ```python:bot.py atau ```mq5:EA.mq5). Jika ada file terlampir, rujuk namanya.';
+const SYS='Kamu asisten coding. Jawab dalam bahasa Indonesia, ringkas dan teknis. Berikan kode lengkap yang siap dijalankan, jangan dipotong dengan tanda titik-titik. Tulis setiap file dalam blok kode terpisah dengan format ```bahasa:namafile.ext (contoh ```python:bot.py atau ```mq5:EA.mq5). Jika ada file terlampir, rujuk namanya. Kode lebih dari beberapa baris wajib punya nama file; blok tanpa nama hanya untuk perintah singkat.';
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const EXT={python:'py',py:'py',javascript:'js',js:'js',node:'js',nodejs:'js',typescript:'ts',ts:'ts',mq5:'mq5',mql5:'mq5',mq4:'mq4',mql4:'mq4',cpp:'cpp','c++':'cpp',c:'c',cs:'cs',csharp:'cs',java:'java',go:'go',rust:'rs',php:'php',json:'json',html:'html',css:'css',bash:'sh',sh:'sh',sql:'sql',yaml:'yml',yml:'yml',markdown:'md',md:'md',text:'txt',txt:'txt',env:'env',ini:'ini'};
 const LM={mq5:'cpp',mql5:'cpp',mq4:'cpp',mql4:'cpp',node:'javascript',nodejs:'javascript',env:'ini',text:'plaintext',txt:'plaintext'};
+const RZ=[['low','Low','Cepat dan hemat'],['mid','Mid','Seimbang (bawaan)'],['max','Max','Paling teliti, lebih lama']];
+let rz=ls.get('rz','mid'),RZOFF=false,pn=0;
+if(!RZ.some(x=>x[0]===rz))rz='mid';
+const rzx=()=>rz==='max'?{longThink:true,depth:'max'}:rz==='low'&&!RZOFF?{reasoning_effort:'low'}:{};
+const rzh=()=>rz==='low'?' Jawab singkat dan langsung ke inti.':rz==='max'?' Analisis menyeluruh langkah demi langkah dan periksa ulang kode sebelum menjawab.':'';
+const FIC='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13l-2 2 2 2M15 13l2 2-2 2"/></svg>';
+function dl(n,c){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/plain;charset=utf-8'}));a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+let VWC='';
+function openVw(box){
+ const n=box.dataset.n,c=box.querySelector('.src').textContent,el=$('#vwc');VWC=c;
+ $('#vwn').textContent=n;el.textContent=c;
+ if(window.hljs){const x=n.split('.').pop().toLowerCase(),L=LM[x]||x;if(hljs.getLanguage(L)){try{el.innerHTML=hljs.highlight(c,{language:L,ignoreIllegals:true}).value}catch{}}}
+ $('#vw').hidden=false;
+}
 function codeBlock(info,code,fin){
  const lang=(info.split(/[\s:]/)[0]||'').toLowerCase();
  let name=(info.match(/[\w\-]+\.[A-Za-z0-9]+/)||[])[0];
  if(!name)name='kode.'+(EXT[lang]||lang||'txt');
+ const nl=code.replace(/\n$/,'').split('\n').length;
+ if(/[\w\-]+\.[A-Za-z0-9]+/.test(info)||nl>=15)return '<div class="fc" data-n="'+esc(name)+'"><button type="button" class="fo" data-a="open"><span class="fi">'+FIC+'</span><span class="ft"><b>'+esc(name)+'</b><small>'+esc((lang||name.split('.').pop()).toUpperCase())+' · '+nl+' baris'+(fin?'':' · menulis…')+'</small></span></button><div class="fb"><button type="button" data-a="copy">Salin</button><button type="button" data-a="dl">Unduh</button></div><pre class="src" hidden>'+esc(code)+'</pre></div>';
  let h=esc(code);
  if(fin&&window.hljs){
   const L=[lang,name.split('.').pop().toLowerCase()].map(x=>LM[x]||x).find(x=>x&&hljs.getLanguage(x));
@@ -349,11 +385,11 @@ function md(t,fin){
 }
 function renderChips(){const c=$('#chips');c.innerHTML='';files.forEach((f,i)=>{const x=document.createElement('span');x.className='chip';x.textContent=f.name+' ✕';x.onclick=()=>{files.splice(i,1);renderChips();fit()};c.appendChild(x)})}
 $('#clip').onclick=()=>$('#fi').click();
-$('#fi').onchange=async e=>{for(const f of e.target.files){if(f.size>300000){alert(f.name+' terlalu besar (maks 300 KB).');continue}const t=await f.text();if(t.includes('\u0000')){alert(f.name+' bukan file teks/kode.');continue}files.push({name:f.name,text:t})}e.target.value='';renderChips();fit()};
+$('#fi').onchange=async e=>{for(const f of e.target.files){if(f.size>1500000){alert(f.name+' terlalu besar (maks 1,5 MB).');continue}const t=await f.text();if(t.includes('\u0000')){alert(f.name+' bukan file teks/kode.');continue}files.push({name:f.name,text:t})}e.target.value='';renderChips();fit()};
 async function zipAll(btn){
  if(!window.JSZip){alert('Library zip belum termuat. Coba lagi.');return}
  const z=new JSZip(),seen={};
- btn.parentElement.querySelectorAll('.cb').forEach(cb=>{const raw=cb.querySelector('.ch span').textContent;seen[raw]=(seen[raw]||0)+1;let n=raw;if(seen[raw]>1){const i=raw.lastIndexOf('.');n=i>0?raw.slice(0,i)+'_'+seen[raw]+raw.slice(i):raw+'_'+seen[raw]}z.file(n,cb.querySelector('code').textContent)});
+ btn.parentElement.querySelectorAll('.fc,.cb').forEach(cb=>{const raw=cb.dataset.n||cb.querySelector('.ch span').textContent;seen[raw]=(seen[raw]||0)+1;let n=raw;if(seen[raw]>1){const i=raw.lastIndexOf('.');n=i>0?raw.slice(0,i)+'_'+seen[raw]+raw.slice(i):raw+'_'+seen[raw]}z.file(n,cb.querySelector('.src,code').textContent)});
  const blob=await z.generateAsync({type:'blob'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kode.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
@@ -429,7 +465,7 @@ function addMsg(role,text,fl){
  const d=document.createElement('div');d.className='msg '+(role==='user'?'user':'bot');
  d.innerHTML=(role==='user'?'':'<div class="av">D</div>')+'<div class="b"></div>';
  const b=d.querySelector('.b');
- if(role==='user')b.textContent=(fl&&fl.length?fl.map(n=>'📎 '+n).join('\n')+'\n':'')+text;else b.innerHTML=md(text,true);
+ if(role==='user'){b.textContent=text;if(fl&&fl.length){const w=document.createElement('div');w.className='uf';fl.forEach(n=>{const x=document.createElement('span');x.className='ufc';x.textContent='📎 '+n;w.appendChild(x)});b.prepend(w)}}else b.innerHTML=md(text,true);
  $('#chat').appendChild(d);return b;
 }
 class ApiErr extends Error{constructor(info){super(info.message);this.info=info}}
@@ -440,6 +476,21 @@ function toInfo(e){
  if(e instanceof ApiErr)return e.info;
  if(e instanceof TypeError&&/fetch|network|load failed/i.test(e.message))return{code:'network',source:'network',message:'Browser tidak bisa menghubungi Worker.',hint:'Cek koneksi internet, alamat API di index.html, dan ALLOWED_ORIGINS di Worker ('+location.origin+' harus terdaftar).'};
  return{code:'client',source:'client',message:e.message||'Kesalahan di halaman.',hint:'Buka Console browser untuk detail.'};
+}
+async function cont(b){
+ const base=cur.msgs[cur.msgs.length-1];b.classList.add('cur');
+ try{
+  for(let r=0;r<6;r++){
+   const res=await fetch(API+'/api/chat',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json',...auth()},body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),messages:[{role:'system',content:SYS+rzh()},...cur.msgs.slice(0,-1).map(({role,content})=>({role,content})),{role:'assistant',content:base.content},{role:'user',content:'Lanjutkan tepat dari karakter terakhir. Jangan mengulang dan jangan beri pengantar.'}]})});
+   if(!res.ok)break;
+   const rd=res.body.getReader(),dec=new TextDecoder();let buf='',f2='';
+   for(;;){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});const L=buf.split('\n');buf=L.pop();
+    for(const l of L){if(!l.startsWith('data:'))continue;const p=l.slice(5).trim();if(!p||p==='[DONE]')continue;try{const j=JSON.parse(p);base.content+=j.choices?.[0]?.delta?.content??'';f2=j.choices?.[0]?.finish_reason||f2}catch{}}
+    b.innerHTML=md(base.content,false);b.classList.add('cur');$('#scroll').scrollTop=1e9}
+   if(f2!=='length')break;
+  }
+ }catch{}
+ b.classList.remove('cur');b.innerHTML=md(base.content,true);save();
 }
 async function send(text){
  text=text.trim();if((!text&&!files.length)||busy)return;
@@ -454,11 +505,13 @@ async function send(text){
  $('#in').value='';fit();setBusy(true);
  const b=addMsg('assistant','');b.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
  $('#scroll').scrollTop=1e9;
- let out='';ctl=new AbortController();
+ let out='',fr='';ctl=new AbortController();
  try{
-  const res=await fetch(API+'/api/chat',{method:'POST',signal:ctl.signal,
+  const call=ex=>fetch(API+'/api/chat',{method:'POST',signal:ctl.signal,
    headers:{'Content-Type':'application/json',...auth()},
-   body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),messages:[{role:'system',content:SYS},...cur.msgs.map(({role,content})=>({role,content}))]})});
+   body:JSON.stringify({stream:true,...(ls.get('model','')?{model:ls.get('model','')}:{}),...ex,messages:[{role:'system',content:SYS+rzh()},...cur.msgs.map(({role,content})=>({role,content}))]})});
+  let res=await call(rzx());
+  if(!res.ok&&rzx().reasoning_effort){const t=await res.clone().text().catch(()=>'');if(/reason|effort|parameter|unsupported|invalid/i.test(t)){RZOFF=true;res=await call({})}}
   if(!res.ok){const e=await readErr(res);if(e.code==='session_invalid'||e.code==='http_401'){sessionLost()}throw new ApiErr(e)}
   const ct=res.headers.get('content-type')||'';
   if(ct.includes('event-stream')){
@@ -471,7 +524,7 @@ async function send(text){
      if(!l.startsWith('data:'))continue;const p=l.slice(5).trim();if(!p||p==='[DONE]')continue;
      let j;try{j=JSON.parse(p)}catch{continue}
      if(j.error)throw new ApiErr({code:'upstream_stream_error',source:'upstream',message:'Provider mengirim error di tengah stream: '+String(j.error.message||JSON.stringify(j.error)).slice(0,300),hint:'Coba lagi atau ganti model.'});
-     out+=j.choices?.[0]?.delta?.content??j.delta?.text??'';
+     out+=j.choices?.[0]?.delta?.content??j.delta?.text??'';fr=j.choices?.[0]?.finish_reason||fr;
     }
     if(out){b.innerHTML=md(out,false);b.classList.add('cur')}
     $('#scroll').scrollTop=1e9;
@@ -484,6 +537,7 @@ async function send(text){
   if(!out)console.warn('[chat] provider membalas tanpa isi',res.status,ct);
   b.classList.remove('cur');b.innerHTML=md(out||'(kosong)',true);
   cur.msgs.push({role:'assistant',content:out});save();
+  if(fr==='length')await cont(b);
  }catch(e){
   b.classList.remove('cur');
   if(e.name==='AbortError'){b.innerHTML=out?md(out,true):'';if(out){cur.msgs.push({role:'assistant',content:out});save()}else cur.msgs.pop()}
@@ -494,6 +548,14 @@ async function send(text){
 function setBusy(v){busy=v;$('#send').textContent=v?'■':'↑';$('#send').disabled=!v&&!$('#in').value.trim()&&!files.length}
 function fit(){const t=$('#in');t.style.height='auto';t.style.height=t.scrollHeight+'px';$('#send').disabled=!busy&&!t.value.trim()&&!files.length}
 $('#in').addEventListener('input',fit);
+$('#in').addEventListener('paste',e=>{const t=e.clipboardData&&e.clipboardData.getData('text');if(t&&t.length>4000){e.preventDefault();files.push({name:'tempelan-'+(++pn)+'.txt',text:t});renderChips();fit()}});
+function rzSync(){$('#rzl').textContent=RZ.find(x=>x[0]===rz)[1];document.querySelectorAll('#rzm button').forEach(b=>b.classList.toggle('on',b.dataset.k===rz))}
+RZ.forEach(([k,n,d])=>{const b=document.createElement('button');b.type='button';b.dataset.k=k;b.innerHTML='<span>'+n+'</span><small>'+d+'</small>';b.onclick=()=>{rz=k;ls.set('rz',k);rzSync();$('#rzm').hidden=true};$('#rzm').appendChild(b)});
+$('#rz').onclick=e=>{e.stopPropagation();$('#rzm').hidden=!$('#rzm').hidden};
+document.addEventListener('click',e=>{if(!e.target.closest('#rzm'))$('#rzm').hidden=true});
+rzSync();
+$('#vwx').onclick=()=>{$('#vw').hidden=true};$('#vwcp').onclick=function(){navigator.clipboard.writeText(VWC).then(()=>{this.textContent='Tersalin ✓';setTimeout(()=>this.textContent='Salin',1500)}).catch(()=>{})};$('#vwdl').onclick=()=>dl($('#vwn').textContent,VWC);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#vw').hidden=true});
 $('#in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!matchMedia('(max-width:760px)').matches){e.preventDefault();$('#form').requestSubmit()}});
 $('#form').onsubmit=e=>{e.preventDefault();if(busy){ctl&&ctl.abort();return}send($('#in').value)};
 $('#new').onclick=()=>{leaveViews();cur=null;renderList();renderChat();document.body.classList.remove('open');$('#in').focus()};
@@ -506,9 +568,10 @@ setTheme(document.documentElement.dataset.theme);
 $('#chat').addEventListener('click',e=>{
  const b=e.target.closest('button[data-a]');if(!b)return;
  if(b.dataset.a==='zip'){zipAll(b);return}
- const code=b.closest('.cb').querySelector('code').textContent;
+ const box=b.closest('.fc,.cb'),isF=box.classList.contains('fc'),code=isF?box.querySelector('.src').textContent:box.querySelector('code').textContent,nm=isF?box.dataset.n:b.dataset.n;
+ if(b.dataset.a==='open'){openVw(box);return}
  if(b.dataset.a==='copy'){navigator.clipboard.writeText(code).then(()=>{b.textContent='Tersalin ✓';setTimeout(()=>b.textContent='Salin',1500)}).catch(()=>{})}
- else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([code],{type:'text/plain;charset=utf-8'}));a.download=b.dataset.n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+ else dl(nm,code)
 });
 function showLock(msg){
  const L=$('#lock'),was=L.classList.contains('on');
