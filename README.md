@@ -35,6 +35,7 @@ web-chatbot/
 | `TWELVEDATA_KEY` | API key Twelve Data untuk menu Grafik XAU/USD (opsional, hanya dipakai Worker) |
 | `GUEST_TRIAL_MIN` | Opsional. Lama trial kode tamu dalam menit (bawaan 60) |
 | `GUEST_CODE_HOURS` | Opsional. Masa berlaku kode tamu yang belum dipakai dalam jam (bawaan 24) |
+| `TELEGRAM_BOT_TOKEN` | Opsional. Token bot dari @BotFather untuk notifikasi Telegram (menu Notifikasi) |
 | `REASONING_HIGH` / `REASONING_MAX` | Opsional. JSON yang digabung ke permintaan analisa AI saat kedalaman berpikir Tinggi / Maksimal, contoh `{"reasoning":{"effort":"high"},"max_tokens":64000}` atau `{"thinking":{"type":"enabled","budget_tokens":30000},"max_tokens":48000}`. Kalau kosong, dipilih otomatis dari alamat `API_URL` |
 | `ALLOWED_ORIGINS` | Opsional. Daftar domain frontend, pisahkan koma. Default: `https://didinska.my.id,https://www.didinska.my.id` |
 
@@ -88,3 +89,12 @@ Login pemilik memakai PIN. Dari menu **Kode tamu** (hanya tampil untuk pemilik) 
 ## Penalaran panjang (Analisa AI)
 
 Analisa AI memakai jalur khusus tanpa batas 60 detik: Worker langsung membuka stream, menjaga koneksi tetap hidup dengan komentar `: ping`, dan menunggu provider sampai 20 menit. Parameter penalaran dicoba bertahap. Jika provider menolak (HTTP 400/422), Worker mengulang dengan parameter lebih sederhana lalu tanpa parameter, dan kartu analisa menandainya. Akun tamu selalu memakai penalaran standar. Batas dari sisi provider atau model (maksimum token, anggaran berpikir) tidak bisa dilewati oleh skrip.
+
+## Penilaian sinyal di server, dashboard Akurasi, dan Telegram
+
+- Setiap analisa yang menghasilkan sinyal disimpan di KV `CHATS` (kunci `sig:<id>`, ringkasannya di metadata) dan dinilai oleh Worker, bukan browser. Penilaian jalan lewat **Cron tiap 5 menit** (lihat `triggers` di `wrangler.jsonc`) dan juga saat panel grafik terbuka. Cron hanya memakai kredit Twelve Data bila ada sinyal atau alert yang menunggu dan pasar buka.
+- Tiap sinyal dinilai dua cara. **Teoritis**: masuk di harga saat analisa, tanpa biaya. **Realistis**: masuk di pembukaan candle berikutnya, spread (bawaan 0,35 USD, atur di menu Notifikasi) dikurangkan, gap harga dihitung apa adanya. Jika SL dan TP berada di satu candle, dihitung SL. Pada momen yang sama, aplikasi juga mencatat sinyal pembanding sederhana (EMA20 dan EMA50 searah, SL 1,5 ATR, TP 2,25 ATR).
+- Alert harga disimpan di server (kunci `alerts`) dan dicek Cron, jadi tetap jalan saat web tertutup.
+- **Telegram**: buat bot di @BotFather, isi Secret `TELEGRAM_BOT_TOKEN`, Deploy, lalu di menu Notifikasi tekan Hubungkan Telegram. Webhook didaftarkan otomatis dan hanya menuruti chat yang sudah dipasangkan. Perintah: `/status`, `/sinyal`, `/akurasi`, `/alert 4150`, `/alerts`, `/hapusalert 1`, `/help`.
+- Daftar event news untuk pengingat ada di `NEWS_EV` di `worker.js`. Daftar yang sama ada di `NWV` di `docs/index.html`; jika salah satu diubah, ubah keduanya.
+- Maksimal 300 sinyal tersimpan (yang tertua dipangkas). Riwayat lama di localStorage diunggah sekali otomatis.
