@@ -6,5 +6,8 @@
 
   // Penyimpanan riwayat obrolan. Dibuat otomatis saat deploy.
   // Kalau gagal, buat KV manual di Cloudflare lalu tambahkan "id": "<ID KV>".
-  "kv_namespaces": [{ "binding": "CHATS" }]
+  "kv_namespaces": [{ "binding": "CHATS" }],
+
+  // Penilaian sinyal, alert harga, dan notifikasi Telegram berjalan sendiri tiap 5 menit.
+  "triggers": { "crons": ["*/5 * * * *"] }
 }
