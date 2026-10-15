@@ -326,19 +326,22 @@ const FX_HINTS = {
 };
 async function forex(request, env, rid) {
   guestCap(await requireAuth(request, env, rid), "forex");
-  need(env, ["TWELVEDATA_KEY"]);
   const q = new URL(request.url).searchParams;
-  const symbol = q.get("symbol") || "XAU/USD", interval = q.get("interval") || "5min";
+  return json(await tdSeries(env, rid, q.get("symbol") || "XAU/USD", q.get("interval") || "5min"));
+}
+// Inti pengambilan candle (dipakai halaman, Cron, dan bot Telegram), dengan cache singkat di memori Worker.
+async function tdSeries(env, rid, symbol, interval) {
+  need(env, ["TWELVEDATA_KEY"]);
   if (!FX_SYMBOLS.includes(symbol)) throw new AppError(400, "bad_request", "client", "Simbol tidak didukung: " + symbol, "Yang diizinkan: " + FX_SYMBOLS.join(", "));
   if (!FX_TTL[interval]) throw new AppError(400, "bad_request", "client", "Interval tidak didukung: " + interval, "Yang diizinkan: " + Object.keys(FX_TTL).join(", "));
   const key = symbol + "|" + interval, now = Date.now(), hit = fxCache.get(key);
-  if (hit && now - hit.t < FX_TTL[interval] * 1000) return json({ ...hit.data, cached: true, age: Math.round((now - hit.t) / 1000) });
+  if (hit && now - hit.t < FX_TTL[interval] * 1000) return { ...hit.data, cached: true, age: Math.round((now - hit.t) / 1000) };
 
   // Kalau Twelve Data gagal tapi ada data lama (maks 15 menit), tampilkan data lama daripada layar kosong.
   const fail = (err) => {
     if (hit && now - hit.t < 15 * 60e3) {
       log("warn", rid, "forex_stale", { code: err.code, msg: err.message });
-      return json({ ...hit.data, cached: true, stale: true, age: Math.round((now - hit.t) / 1000), note: err.message });
+      return { ...hit.data, cached: true, stale: true, age: Math.round((now - hit.t) / 1000), note: err.message };
     }
     throw err;
   };
@@ -375,7 +378,7 @@ async function forex(request, env, rid) {
   const left = res.headers.get("api-credits-left"), used = res.headers.get("api-credits-used");
   const data = { ok: true, symbol, interval, tz: "Asia/Jakarta", values, credits: { left: left == null ? null : Number(left), used: used == null ? null : Number(used) } };
   fxCache.set(key, { t: now, data });
-  return json({ ...data, cached: false, age: 0 });
+  return { ...data, cached: false, age: 0 };
 }
 
 // Pemeriksaan satu per satu: Secret, KV, origin, dan koneksi ke provider.
@@ -397,6 +400,7 @@ async function diag(request, env, rid) {
   const k = String(env.API_KEY || "");
   add("API_KEY", !!k, k ? "terisi, awalan " + (k.includes("_") ? k.split("_")[0] + "_" : k.slice(0, 3) + "…") : "belum diisi");
   add("MODEL", true, env.MODEL || "(kosong, model dipilih dari sidebar)");
+  add("TELEGRAM_BOT_TOKEN", true, env.TELEGRAM_BOT_TOKEN ? "terisi (notifikasi Telegram)" : "belum diisi (opsional, untuk notifikasi Telegram)");
   add("TWELVEDATA_KEY", !!env.TWELVEDATA_KEY, env.TWELVEDATA_KEY ? "terisi (grafik XAU/USD)" : "belum diisi (menu Grafik XAU/USD tidak akan jalan)");
   if (!env.CHATS) add("KV CHATS", false, "belum terpasang, deploy ulang Worker");
   else { try { await env.CHATS.get("chats"); add("KV CHATS", true, "bisa dibaca"); } catch (e) { add("KV CHATS", false, String(e.message || e)); } }
@@ -468,7 +472,7 @@ function longChat(env, rid, ctx, body, model, extras) {
         ev({ error: { message: e.message, code: e.code, hint: e.hint } });
         return;
       }
-      ev({ meta: { think: used < extras.length ? "param" : "none", attempt: used } });
+      ev({ meta: { think: used < extras.length ? "param" : "none", attempt: used, model } });
       if ((res.headers.get("content-type") || "").includes("event-stream")) {
         const rd = res.body.getReader();
         for (;;) {
@@ -519,7 +523,477 @@ async function chat(request, env, rid, ctx) {
   });
 }
 
+// ===== Sinyal: penyimpanan, penilaian di server (Cron), alert harga, dan notifikasi Telegram =====
+const FINE = { scalp: "5min", intra: "15min", swing: "1h" };
+const HOR = { scalp: 3, intra: 12, swing: 48 }; // jam jangka penilaian
+const STYLE_NM = { scalp: "Scalping", intra: "Intraday", swing: "Swing" };
+const SIG_MAX = 300;
+const ZONES = { ET: "America/New_York", CET: "Europe/Berlin", UK: "Europe/London", JST: "Asia/Tokyo" };
+const NEWS_EV = [
+  ["2026-10-07", "14:00", "ET", "Risalah rapat FOMC (rapat September)"],
+  ["2026-10-14", "08:30", "ET", "CPI AS (inflasi September)"],
+  ["2026-10-28", "14:00", "ET", "FOMC: keputusan suku bunga"],
+  ["2026-10-29", "08:30", "ET", "PDB AS kuartal III (estimasi awal)"],
+  ["2026-10-29", "08:30", "ET", "Core PCE AS (September)"],
+  ["2026-10-29", "14:15", "CET", "ECB: keputusan suku bunga"],
+  ["2026-10-30", "12:00", "JST", "BoJ: keputusan suku bunga + Outlook Report"],
+  ["2026-11-05", "12:00", "UK", "BoE: keputusan suku bunga + Monetary Policy Report"],
+  ["2026-11-06", "08:30", "ET", "NFP (Non-Farm Payrolls) Oktober"],
+  ["2026-11-10", "08:30", "ET", "CPI AS (inflasi Oktober)"],
+  ["2026-11-18", "14:00", "ET", "Risalah rapat FOMC (rapat Oktober)"],
+  ["2026-11-25", "08:30", "ET", "Core PCE AS (Oktober)"],
+  ["2026-12-04", "08:30", "ET", "NFP (Non-Farm Payrolls) November"],
+  ["2026-12-09", "14:00", "ET", "FOMC: keputusan suku bunga + proyeksi (SEP)"],
+  ["2026-12-10", "08:30", "ET", "CPI AS (inflasi November)"],
+  ["2026-12-17", "14:15", "CET", "ECB: keputusan suku bunga"],
+  ["2026-12-17", "12:00", "UK", "BoE: keputusan suku bunga"],
+  ["2026-12-18", "12:00", "JST", "BoJ: keputusan suku bunga"],
+  ["2026-12-23", "08:30", "ET", "Core PCE AS (November)"],
+  ["2026-12-30", "14:00", "ET", "Risalah rapat FOMC (rapat Desember)"]
+];
+
+const MON = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const p2 = n => String(n).padStart(2, "0");
+const P = s => { const m = /^(\d{4})-(\d\d)-(\d\d)(?:[ T](\d\d):(\d\d))?/.exec(s); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)) : NaN; };
+const wibNow = () => Date.now() + 7 * 36e5; // "waktu dinding WIB" sebagai milidetik, sama dengan jam di candle
+const numOf = x => { const n = typeof x === "number" ? x : parseFloat(String(x).replace(/,/g, "")); return Number.isFinite(n) ? n : null; };
+const fmt = (x, d = 2) => Number(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const H = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const strOf = (x, n) => (typeof x === "string" ? x.slice(0, n) : null);
+const wibStr = w => { const d = new Date(w); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())} WIB`; };
+const rTxt = x => (x && x.r != null ? (x.r >= 0 ? "+" : "−") + Math.abs(x.r).toFixed(1) + "R" : "-");
+
+function zWall(u, z) {
+  const o = {};
+  new Intl.DateTimeFormat("en-GB", { timeZone: z, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(u)).forEach(x => (o[x.type] = x.value));
+  return Date.UTC(+o.year, o.month - 1, +o.day, +o.hour, +o.minute);
+}
+function zUtc(d, t, z) {
+  const [y, m, dd] = d.split("-").map(Number), [h, mi] = t.split(":").map(Number), want = Date.UTC(y, m - 1, dd, h, mi);
+  let u = want;
+  for (let i = 0; i < 3; i++) u += want - zWall(u, z);
+  return u;
+}
+// Pasar emas tutup Jumat 17:00 ET sampai Minggu 18:00 ET (libur khusus tidak dihitung)
+function marketOpen(u = Date.now()) {
+  const x = new Date(zWall(u, "America/New_York")), dow = x.getUTCDay(), m = x.getUTCHours() * 60 + x.getUTCMinutes();
+  return !(dow === 6 || (dow === 5 && m >= 1020) || (dow === 0 && m < 1080));
+}
+
+// ---------- penilaian ----------
+function candleStep(v) {
+  let m = Infinity;
+  for (let i = 1; i < Math.min(v.length, 7); i++) m = Math.min(m, P(v[i].t) - P(v[i - 1].t));
+  return Number.isFinite(m) && m > 0 ? m : 36e5;
+}
+// mode "ideal": masuk di harga saat analisa tanpa biaya. mode "real": masuk di open candle berikutnya + spread (candle dianggap harga bid:
+// BUY masuk di ask = open + spread, SELL keluar di ask). Jika SL dan TP di satu candle, dihitung SL (pesimis).
+function judgeTrade(S, ts, hor, atr, v, mode, spread, wall) {
+  const end = ts + hor * 36e5;
+  if (!v.length || P(v[0].t) > ts + candleStep(v)) return { s: "nodata" };
+  const buy = S.type === "BUY", real = mode === "real", idx = v.findIndex(c => P(c.t) > ts);
+  if (idx < 0 || P(v[idx].t) >= end) return wall >= end ? { s: "expired", r: 0 } : { s: "pending" };
+  const c0 = v[idx], entry = real ? (buy ? c0.o + spread : c0.o) : S.entry, risk = buy ? entry - S.sl : S.sl - entry, a = atr || entry * 0.002;
+  if (!(risk > 1e-9)) return { s: "skip", e: entry };
+  if (real && (!(risk >= a * 0.2) || !(buy ? S.tp1 > entry : S.tp1 < entry))) return { s: "skip", e: entry };
+  let last = null;
+  for (let i = idx; i < v.length; i++) {
+    const c = v[i], t = P(c.t);
+    if (t >= end) break;
+    last = c;
+    const sp = real && !buy ? spread : 0;
+    const slHit = buy ? c.l <= S.sl : c.h + sp >= S.sl, tpHit = buy ? c.h >= S.tp1 : c.l + sp <= S.tp1;
+    if (slHit) {
+      let r = -1;
+      if (real) { const px = buy ? Math.min(c.o, S.sl) : Math.max(c.o + spread, S.sl); r = (buy ? px - entry : entry - px) / risk; }
+      return { s: "loss", r, at: t, e: entry };
+    }
+    if (tpHit) return { s: "win", r: (buy ? S.tp1 - entry : entry - S.tp1) / risk, at: t, e: entry };
+  }
+  if (wall >= end) { const lc = last ? last.c + (real && !buy ? spread : 0) : entry; return { s: "expired", r: (buy ? lc - entry : entry - lc) / risk, e: entry }; }
+  return { s: "pending", e: entry };
+}
+// WAIT dinilai dari pemicu: menembus pemicu BUY/SELL (atau 1 ATR bila tidak ada) sebelum jangka habis = terlewat, jika tidak = tepat
+function judgeWait(r, v, wall) {
+  const end = r.ts + r.hor * 36e5, a = r.atr || r.price * 0.002;
+  if (!v.length || P(v[0].t) > r.ts + candleStep(v)) return { s: "nodata" };
+  const B = r.trg && r.trg.buy != null ? r.trg.buy : r.price + a, S = r.trg && r.trg.sell != null ? r.trg.sell : r.price - a;
+  for (const c of v) { const t = P(c.t); if (!(t > r.ts && t < end)) continue; if (c.h >= B || c.l <= S) return { s: "wmiss", at: t }; }
+  return wall >= end ? { s: "wok" } : { s: "pending" };
+}
+const fin = o => !!o && o.s !== "pending";
+async function evalRecord(rec, getS, spread, wall) {
+  const before = JSON.stringify([rec.ev, rec.bv, rec.status, rec.done]), fine = FINE[rec.style] || "1h";
+  const run = async fn => {
+    const j = await getS(fine); let o = j ? fn(j.values) : null;
+    if ((!o || o.s === "nodata") && fine !== "1h") { const j2 = await getS("1h"); if (j2) o = fn(j2.values); }
+    return o;
+  };
+  rec.ev = rec.ev || {};
+  if (rec.sig) {
+    const oi = await run(v => judgeTrade(rec.sig, rec.ts, rec.hor, rec.atr, v, "ideal", spread, wall)), or = await run(v => judgeTrade(rec.sig, rec.ts, rec.hor, rec.atr, v, "real", spread, wall));
+    if (oi) rec.ev.i = oi; if (or) rec.ev.r = or;
+  } else if (rec.wait) {
+    const o = await run(v => judgeWait(rec, v, wall));
+    if (o) { rec.ev.i = o; rec.ev.r = o; }
+  }
+  if (rec.base && rec.base.type) {
+    const bi = await run(v => judgeTrade(rec.base, rec.ts, rec.hor, rec.atr, v, "ideal", spread, wall)), br = await run(v => judgeTrade(rec.base, rec.ts, rec.hor, rec.atr, v, "real", spread, wall));
+    rec.bv = { i: bi || (rec.bv && rec.bv.i) || null, r: br || (rec.bv && rec.bv.r) || null };
+  }
+  const mainDone = rec.sig || rec.wait ? fin(rec.ev.r) && fin(rec.ev.i) : true, baseDone = rec.base && rec.base.type ? !!rec.bv && fin(rec.bv.r) && fin(rec.bv.i) : true;
+  rec.done = mainDone && baseDone;
+  rec.status = (rec.ev.r && rec.ev.r.s) || rec.status || "pending";
+  return JSON.stringify([rec.ev, rec.bv, rec.status, rec.done]) !== before;
+}
+
+// ---------- rekaman ----------
+const r3 = x => (x == null ? null : +Number(x).toFixed(3));
+function metaOf(r) {
+  const ev = r.ev || {}, bv = r.bv || {};
+  return {
+    i: r.id, ts: r.ts, st: r.style, sn: r.sens || "seimbang", cf: r.conf || null, g: r.sig ? (r.sig.type === "BUY" ? "B" : "S") : r.wait ? "W" : "-", d: r.done ? 1 : 0,
+    s: (ev.r && ev.r.s) || r.status || "pending", r: r3(ev.r && ev.r.r), si: (ev.i && ev.i.s) || null, ri: r3(ev.i && ev.i.r),
+    m: r.model ? String(r.model).slice(0, 40) : null, pv: r.pv || null, dp: r.depth || null, ss: r.ss || "", ne: r.ne == null ? null : r.ne, tf: r.tf, hor: r.hor, pr: r.price,
+    b: r.base && r.base.type ? r.base.type[0] : null, bs: (bv.r && bv.r.s) || null, bsi: (bv.i && bv.i.s) || null, br: r3(bv.r && bv.r.r), bri: r3(bv.i && bv.i.r),
+  };
+}
+const putRec = (env, rec) => env.CHATS.put("sig:" + rec.id, JSON.stringify(rec), { metadata: metaOf(rec) });
+function cleanTrade(t, price) {
+  if (!t || (t.type !== "BUY" && t.type !== "SELL")) return null;
+  const entry = numOf(t.entry) ?? price, sl = numOf(t.sl), tp1 = numOf(t.tp1), buy = t.type === "BUY";
+  if (sl == null || tp1 == null || (buy ? !(sl < entry && tp1 > entry) : !(sl > entry && tp1 < entry))) return null;
+  const tp2 = numOf(t.tp2);
+  return { type: t.type, entry, sl, tp1, tp2: tp2 != null && (buy ? tp2 > tp1 : tp2 < tp1) ? tp2 : null };
+}
+function cleanRec(b, wall) {
+  b = b || {};
+  const price = numOf(b.price);
+  if (price == null || price < 100) throw new AppError(400, "bad_request", "client", "Harga analisa tidak valid.");
+  const near = x => { const n = numOf(x); return n != null && Math.abs(n - price) < price * 0.2 ? n : null; };
+  const arr = (a, k = 3) => (Array.isArray(a) ? a : []).map(near).filter(x => x != null).slice(0, k);
+  const style = ["scalp", "intra", "swing"].includes(b.style) ? b.style : "intra", sig = cleanTrade(b.sig, price), wait = !!b.wait && !sig;
+  const tb = near(b.trg && b.trg.buy), ts = near(b.trg && b.trg.sell);
+  return {
+    id: wall.toString(36) + Math.random().toString(36).slice(2, 6), ts: wall, tf: strOf(b.tf, 8), tfLabel: strOf(b.tfLabel, 12), style,
+    sens: ["kons", "seimbang", "agresif"].includes(b.sens) ? b.sens : "seimbang", depth: ["std", "high", "max"].includes(b.depth) ? b.depth : null,
+    model: strOf(b.model, 60), pv: strOf(b.pv, 12), price, atr: numOf(b.atr), bias: ["naik", "turun", "netral"].includes(b.bias) ? b.bias : "netral",
+    conf: ["rendah", "sedang", "tinggi"].includes(b.conf) ? b.conf : null, sig, wait, waitWhy: strOf(b.waitWhy, 160), trg: tb != null || ts != null ? { buy: tb, sell: ts } : null,
+    inv: near(b.inv), sup: arr(b.sup), res: arr(b.res), tn: arr(b.tn, 2), tt: arr(b.tt, 2), hor: HOR[style], ss: strOf(b.ss, 3) || "",
+    ne: Number.isFinite(+b.ne) ? Math.round(+b.ne) : null, base: cleanTrade(b.base, price),
+    text: strOf(b.text, 6000) || "", ctx: strOf(b.ctx, 7000) || "", meta: strOf(b.meta, 400) || "",
+    align: (Array.isArray(b.align) ? b.align : []).slice(0, 8).map(x => ({ nm: strOf(x && x.nm, 10), b: strOf(x && x.b, 10) })),
+    status: sig || wait ? "pending" : "na", done: !(sig || wait) && !(cleanTrade(b.base, price)), ev: {}, bv: null,
+  };
+}
+async function listSigs(env) {
+  const out = []; let cursor;
+  for (let i = 0; i < 3; i++) {
+    const l = await env.CHATS.list({ prefix: "sig:", limit: 1000, cursor });
+    for (const k of l.keys) if (k.metadata) out.push({ key: k.name, ...k.metadata });
+    if (l.list_complete !== false) break;
+    cursor = l.cursor;
+  }
+  return out.sort((a, b) => b.ts - a.ts);
+}
+
+// ---------- pengaturan ----------
+const CFG0 = { chatId: null, spread: 0.35, newsMin: 30, sum: "daily", n: { sig: true, res: true, alert: true, news: true, wait: true }, quiet: { on: true, from: "23:00", to: "06:00" } };
+async function getCfg(env) {
+  const c = (env.CHATS && (await env.CHATS.get("cfg", "json"))) || {};
+  return { ...CFG0, ...c, n: { ...CFG0.n, ...(c.n || {}) }, quiet: { ...CFG0.quiet, ...(c.quiet || {}) } };
+}
+const putCfg = (env, c) => env.CHATS.put("cfg", JSON.stringify(c));
+const hm2min = s => { const m = /^(\d\d):(\d\d)$/.exec(s || ""); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; };
+function inQuiet(cfg, wall) {
+  if (!cfg.quiet.on) return false;
+  const f = hm2min(cfg.quiet.from), t = hm2min(cfg.quiet.to);
+  if (f == null || t == null) return false;
+  const d = new Date(wall), m = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return f < t ? m >= f && m < t : m >= f || m < t;
+}
+function cleanCfg(cur, b) {
+  const c = { ...cur, n: { ...cur.n }, quiet: { ...cur.quiet } };
+  b = b || {};
+  if (b.spread !== undefined) { const x = numOf(b.spread); if (x == null || x < 0 || x > 5) throw new AppError(400, "bad_request", "client", "Spread harus angka 0 sampai 5 (USD)."); c.spread = x; }
+  if (b.newsMin !== undefined) { if (![10, 15, 30, 60].includes(+b.newsMin)) throw new AppError(400, "bad_request", "client", "Pengingat news: 10, 15, 30, atau 60 menit."); c.newsMin = +b.newsMin; }
+  if (b.sum !== undefined) { if (!["off", "daily", "weekly"].includes(b.sum)) throw new AppError(400, "bad_request", "client", "Ringkasan: off, daily, atau weekly."); c.sum = b.sum; }
+  if (b.n) for (const k of Object.keys(CFG0.n)) if (typeof b.n[k] === "boolean") c.n[k] = b.n[k];
+  if (b.quiet) {
+    if (typeof b.quiet.on === "boolean") c.quiet.on = b.quiet.on;
+    for (const k of ["from", "to"]) if (b.quiet[k] !== undefined) { if (hm2min(b.quiet[k]) == null) throw new AppError(400, "bad_request", "client", "Jam tenang harus berformat HH:MM."); c.quiet[k] = b.quiet[k]; }
+  }
+  return c;
+}
+
+// ---------- Telegram ----------
+async function tgApi(env, method, body) {
+  const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => null);
+  log(j && j.ok ? "info" : "warn", "-", "telegram", { method, status: r.status, ok: !!(j && j.ok), err: j && !j.ok ? String(j.description || "").slice(0, 120) : undefined });
+  return j;
+}
+async function tgSend(env, chatId, text) {
+  try { const j = await tgApi(env, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true }); return !!(j && j.ok); }
+  catch (e) { log("error", "-", "telegram_fail", { msg: String((e && e.message) || e) }); return false; }
+}
+// kind: sig | res | alert | news | wait. critical = tetap dikirim di jam tenang.
+async function notify(env, cfg, kind, text, critical) {
+  if (!env.TELEGRAM_BOT_TOKEN || !cfg.chatId || cfg.n[kind] === false) return false;
+  if (!critical && inQuiet(cfg, wibNow())) return false;
+  return tgSend(env, cfg.chatId, text);
+}
+const webhookSecret = env => sign("tg-webhook", env.SESSION_SECRET);
+function msgResult(rec) {
+  const S = rec.sig, R = (rec.ev && rec.ev.r) || {}, I = (rec.ev && rec.ev.i) || {};
+  const head = { win: "✅ TP tercapai", loss: "❌ SL kena", expired: "⌛ Kedaluwarsa", skip: "⏭ Tidak dieksekusi (harga sudah dekat atau melewati SL saat entry)", nodata: "❔ Data tidak cukup" }[R.s] || "ℹ️ " + R.s;
+  return `${head} — <b>${S.type}</b> XAU/USD\nEntry ${fmt(S.entry)} · SL ${fmt(S.sl)} · TP1 ${fmt(S.tp1)}\nHasil realistis: <b>${rTxt(R)}</b> (teoritis ${rTxt(I)})\n${STYLE_NM[rec.style] || rec.style} · keyakinan ${H(rec.conf || "-")} · ${wibStr(rec.ts)}`;
+}
+function msgNew(rec) {
+  if (rec.sig) { const S = rec.sig; return `📌 Sinyal baru: <b>${S.type}</b> XAU/USD\nEntry ${fmt(S.entry)} · SL ${fmt(S.sl)} · TP1 ${fmt(S.tp1)}${S.tp2 != null ? " · TP2 " + fmt(S.tp2) : ""}\n${STYLE_NM[rec.style]} · keyakinan ${H(rec.conf || "-")} · berlaku ${rec.hor} jam`; }
+  const T = rec.trg || {};
+  return `⏸ <b>WAIT</b> XAU/USD${rec.waitWhy ? "\n" + H(rec.waitWhy) : ""}${T.buy != null ? "\nBUY jika di atas " + fmt(T.buy) : ""}${T.sell != null ? "\nSELL jika di bawah " + fmt(T.sell) : ""}`;
+}
+function summarize(items, since) {
+  const L = items.filter(x => x.ts >= since), sg = L.filter(x => x.g === "B" || x.g === "S"), w = sg.filter(x => x.s === "win").length, l = sg.filter(x => x.s === "loss").length;
+  const R = sg.filter(x => x.s === "win" || x.s === "loss").reduce((a, x) => a + (x.r || 0), 0), Ri = sg.filter(x => x.si === "win" || x.si === "loss").reduce((a, x) => a + (x.ri || 0), 0);
+  const wt = L.filter(x => x.g === "W"), wo = wt.filter(x => x.s === "wok").length, wn = wo + wt.filter(x => x.s === "wmiss").length;
+  return { n: L.length, sg: sg.length, w, l, ex: sg.filter(x => x.s === "expired").length, sk: sg.filter(x => x.s === "skip").length, pend: sg.filter(x => x.s === "pending").length, R, Ri, wo, wn };
+}
+function msgSummary(title, s) {
+  return `📊 <b>${title}</b>\nSinyal BUY/SELL: ${s.sg} (${s.w} menang, ${s.l} kalah${s.l + s.w ? ", " + Math.round((s.w / (s.w + s.l)) * 100) + "%" : ""}${s.ex ? ", " + s.ex + " kedaluwarsa" : ""}${s.sk ? ", " + s.sk + " tidak dieksekusi" : ""}${s.pend ? ", " + s.pend + " menunggu" : ""})\nTotal R realistis: <b>${(s.R >= 0 ? "+" : "−") + Math.abs(s.R).toFixed(1)}R</b> (teoritis ${(s.Ri >= 0 ? "+" : "−") + Math.abs(s.Ri).toFixed(1)}R)${s.wn ? "\nWAIT tepat: " + s.wo + " dari " + s.wn : ""}`;
+}
+
+// ---------- alert harga (disimpan di server, dicek Cron) ----------
+const getAlerts = async env => (await env.CHATS.get("alerts", "json")) || [];
+const putAlerts = (env, a) => env.CHATS.put("alerts", JSON.stringify(a));
+
+// ---------- mesin evaluasi (dipakai Cron dan halaman) ----------
+let lastPageEval = 0;
+async function evalAll(env, rid, opt = {}) {
+  const out = { changes: [], fired: [], fetched: [] };
+  if (!env.CHATS || !env.TWELVEDATA_KEY) return out;
+  const now = Date.now(), wall = now + 7 * 36e5, open = marketOpen(now), cfg = await getCfg(env), S = {};
+  const getS = async tf => { if (!(tf in S)) { try { S[tf] = await tdSeries(env, rid, "XAU/USD", tf); out.fetched.push(tf); } catch (e) { S[tf] = null; log("warn", rid, "eval_series_fail", { tf, msg: String((e && e.message) || e).slice(0, 120) }); } } return S[tf]; };
+  const items = await listSigs(env), pend = items.filter(x => !x.d).slice(0, 25);
+  for (const it of pend) {
+    if (!open && wall < it.ts + it.hor * 36e5) continue; // pasar tutup dan jangka belum habis: tidak ada candle baru
+    const rec = await env.CHATS.get(it.key, "json");
+    if (!rec) continue;
+    const wasDone = fin(rec.ev && rec.ev.r), ch = await evalRecord(rec, getS, cfg.spread, wall);
+    if (!ch) continue;
+    await putRec(env, rec);
+    out.changes.push({ id: rec.id, s: rec.status, done: rec.done });
+    if (!wasDone && fin(rec.ev.r)) {
+      if (rec.sig) await notify(env, cfg, "res", msgResult(rec), true);
+      else if (rec.wait && rec.ev.r.s === "wmiss") {
+        const T = rec.trg || {};
+        await notify(env, cfg, "wait", `⚠ WAIT terlewat — harga menembus pemicu${T.buy != null ? " BUY di atas " + fmt(T.buy) : ""}${T.sell != null ? " / SELL di bawah " + fmt(T.sell) : ""} (${wibStr(rec.ts)})`, false);
+      }
+    }
+  }
+  const alerts = open ? await getAlerts(env) : [];
+  if (alerts.length) {
+    const j = await getS("5min");
+    if (j) {
+      const v = j.values, step = candleStep(v), keep = [];
+      for (const a of alerts) {
+        let hit = false;
+        for (const c of v) { const t = P(c.t); if (t > a.ts) hit = a.dir === "up" ? c.h >= a.p : c.l <= a.p; else if (t + step > a.ts) hit = a.dir === "up" ? c.c >= a.p : c.c <= a.p; if (hit) break; }
+        if (hit) { out.fired.push(a); await notify(env, cfg, "alert", `🔔 Alert harga XAU/USD: ${a.dir === "up" ? "naik ke ≥" : "turun ke ≤"} <b>${fmt(a.p)}</b> (harga ${fmt(v[v.length - 1].c)})`, true); }
+        else keep.push(a);
+      }
+      if (out.fired.length) await putAlerts(env, keep);
+    }
+  }
+  return out;
+}
+// Pengingat news dan ringkasan, hanya dari Cron. Keadaan disimpan di KV "state" dan hanya ditulis bila berubah.
+async function cronExtras(env, rid) {
+  const cfg = await getCfg(env);
+  if (!cfg.chatId || !env.TELEGRAM_BOT_TOKEN) return;
+  const now = Date.now(), wall = now + 7 * 36e5, st = (await env.CHATS.get("state", "json")) || { news: {}, sumD: "", sumW: "" };
+  let dirty = false;
+  for (const [d, t, z, n] of NEWS_EV) {
+    const ms = zUtc(d, t, ZONES[z]), key = d + "|" + n;
+    if (st.news[key] || ms <= now || ms - now > cfg.newsMin * 60e3) continue;
+    st.news[key] = now; dirty = true;
+    await notify(env, cfg, "news", `⏰ ${Math.max(1, Math.round((ms - now) / 6e4))} menit lagi: <b>${H(n)}</b> (${p2(new Date(ms + 7 * 36e5).getUTCHours())}:${p2(new Date(ms + 7 * 36e5).getUTCMinutes())} WIB). Volatilitas bisa melonjak.`, false);
+  }
+  for (const k of Object.keys(st.news)) if (now - st.news[k] > 7 * 864e5) { delete st.news[k]; dirty = true; }
+  const d = new Date(wall), day = `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}`, hr = d.getUTCHours();
+  if (cfg.sum !== "off" && hr >= 7 && hr < 22) {
+    const weekly = cfg.sum === "weekly", due = weekly ? d.getUTCDay() === 1 && st.sumW !== day : st.sumD !== day;
+    if (due) {
+      const items = await listSigs(env), s = summarize(items, wall - (weekly ? 7 : 1) * 864e5);
+      if (weekly) st.sumW = day; else st.sumD = day;
+      dirty = true;
+      if (s.n) await notify(env, cfg, "news", msgSummary(weekly ? "Ringkasan 7 hari terakhir" : "Ringkasan 24 jam terakhir", s), false);
+    }
+  }
+  if (dirty) await env.CHATS.put("state", JSON.stringify(st));
+}
+async function cronRun(env) {
+  const rid = "cron-" + crypto.randomUUID().slice(0, 4);
+  try {
+    if (!env.CHATS) return;
+    const r = await evalAll(env, rid, { cron: true });
+    await cronExtras(env, rid);
+    log("info", rid, "cron", { changes: r.changes.length, fired: r.fired.length, fetched: r.fetched.join(",") });
+  } catch (e) { log("error", rid, "cron_fail", { msg: String((e && e.message) || e), stack: String((e && e.stack) || "").slice(0, 400) }); }
+}
+
+// ---------- API: sinyal ----------
+async function signalsApi(request, env, rid) {
+  await requireAuth(request, env, rid, true);
+  if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang.", CFG_HINT);
+  const cfg = await getCfg(env);
+  if (request.method === "GET") {
+    const id = new URL(request.url).searchParams.get("id");
+    if (id) { const rec = await env.CHATS.get("sig:" + id, "json"); if (!rec) throw new AppError(404, "not_found", "client", "Sinyal tidak ditemukan."); return json({ ok: true, rec }); }
+    return json({ ok: true, items: (await listSigs(env)).map(({ key, ...m }) => m), cfg: { spread: cfg.spread }, now: wibNow() });
+  }
+  const b = await request.json().catch(() => ({}));
+  if (b.action === "create") {
+    const rec = cleanRec(b.rec, wibNow());
+    await putRec(env, rec);
+    const items = await listSigs(env);
+    if (items.length > SIG_MAX) for (const x of items.slice(SIG_MAX)) await env.CHATS.delete(x.key);
+    if (rec.sig || rec.wait) await notify(env, cfg, "sig", msgNew(rec), true);
+    return json({ ok: true, id: rec.id, meta: metaOf(rec) });
+  }
+  if (b.action === "import") {
+    const list = (Array.isArray(b.records) ? b.records : []).slice(0, 100);
+    let n = 0;
+    for (const r0 of list) {
+      try {
+        const rec = cleanRec({ ...r0, ...(r0.sig ? {} : {}) }, numOf(r0.ts) || wibNow());
+        rec.ts = numOf(r0.ts) || rec.ts; rec.id = "i" + rec.id; rec.imp = true;
+        const old = ({ win: "win", loss: "loss", expired: "expired", wok: "wok", wmiss: "wmiss", nodata: "nodata", hit: "win", miss: "loss" })[r0.status];
+        if (r0.done && old) { rec.ev = { i: { s: old, r: numOf(r0.r) }, r: { s: old, r: numOf(r0.r) } }; rec.status = old; rec.done = true; }
+        if (await env.CHATS.get("sig:" + rec.id)) continue;
+        await putRec(env, rec); n++;
+      } catch { /* lewati rekaman yang tidak valid */ }
+    }
+    return json({ ok: true, imported: n });
+  }
+  if (b.action === "delete") { const id = String(b.id || ""); if (id) await env.CHATS.delete("sig:" + id); return json({ ok: true }); }
+  if (b.action === "clear") { for (const x of await listSigs(env)) await env.CHATS.delete(x.key); return json({ ok: true }); }
+  if (b.action === "eval") {
+    if (Date.now() - lastPageEval < 15000) return json({ ok: true, throttled: true, changes: [], fired: [] });
+    lastPageEval = Date.now();
+    const r = await evalAll(env, rid, {});
+    return json({ ok: true, changes: r.changes, fired: r.fired.map(a => ({ p: a.p, dir: a.dir })) });
+  }
+  throw new AppError(400, "bad_request", "client", "Aksi tidak dikenal.", "Gunakan create, import, delete, clear, atau eval.");
+}
+// ---------- API: alert harga ----------
+async function alertsApi(request, env, rid) {
+  await requireAuth(request, env, rid, true);
+  if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang.", CFG_HINT);
+  let list = await getAlerts(env);
+  if (request.method === "GET") return json({ ok: true, alerts: list });
+  const b = await request.json().catch(() => ({}));
+  if (b.action === "add") {
+    const p = numOf(b.p), px = numOf(b.px);
+    if (p == null || p <= 0 || px == null) throw new AppError(400, "bad_request", "client", "Level atau harga acuan tidak valid.");
+    if (Math.abs(p - px) < 0.01) throw new AppError(400, "bad_request", "client", "Level sama dengan harga sekarang.");
+    if (list.length >= 5) throw new AppError(400, "limit", "client", "Maksimal 5 alert aktif.");
+    list.push({ id: Math.random().toString(36).slice(2, 8), p, dir: p > px ? "up" : "down", ts: wibNow() });
+  } else if (b.action === "remove") list = list.filter(a => a.id !== b.id);
+  else if (b.action === "clear") list = [];
+  else throw new AppError(400, "bad_request", "client", "Aksi tidak dikenal.");
+  await putAlerts(env, list);
+  return json({ ok: true, alerts: list });
+}
+// ---------- API: pengaturan notifikasi + penyambungan Telegram ----------
+async function notifyApi(request, env, rid) {
+  await requireAuth(request, env, rid, true);
+  if (!env.CHATS) throw new AppError(500, "kv_missing", "config", "KV 'CHATS' belum terpasang.", CFG_HINT);
+  const b = await request.json().catch(() => ({})), cfg = await getCfg(env), tokenSet = !!env.TELEGRAM_BOT_TOKEN;
+  const view = c => ({ tokenSet, linked: !!c.chatId, spread: c.spread, newsMin: c.newsMin, sum: c.sum, n: c.n, quiet: c.quiet });
+  if (b.action === "status") return json({ ok: true, ...view(cfg) });
+  if (b.action === "save") { const c = cleanCfg(cfg, b.cfg); await putCfg(env, c); return json({ ok: true, ...view(c) }); }
+  if (!tokenSet) throw new AppError(400, "telegram_token_missing", "config", "Secret TELEGRAM_BOT_TOKEN belum diisi.", "Buat bot di @BotFather, isi tokennya sebagai Secret TELEGRAM_BOT_TOKEN, lalu Deploy.");
+  if (b.action === "pair") {
+    const me = await tgApi(env, "getMe");
+    if (!me || !me.ok) throw new AppError(502, "telegram_rejected", "upstream", "Telegram menolak token bot.", "Cek TELEGRAM_BOT_TOKEN di @BotFather.");
+    const hook = await tgApi(env, "setWebhook", { url: new URL(request.url).origin + "/api/telegram", secret_token: await webhookSecret(env), allowed_updates: ["message"] });
+    if (!hook || !hook.ok) throw new AppError(502, "telegram_webhook", "upstream", "Gagal mendaftarkan webhook Telegram: " + String((hook && hook.description) || "tidak ada jawaban"), "Pastikan Worker bisa diakses lewat HTTPS publik.");
+    const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+    await env.CHATS.put("tg:pair", JSON.stringify({ code, exp: Date.now() + 10 * 60e3 }), { expirationTtl: 660 });
+    return json({ ok: true, code, bot: me.result.username, ttlMin: 10 });
+  }
+  if (b.action === "test") {
+    if (!cfg.chatId) throw new AppError(400, "telegram_not_linked", "client", "Telegram belum terhubung.", "Tekan Hubungkan Telegram dulu.");
+    const ok = await tgSend(env, cfg.chatId, "✅ Tes notifikasi didinska.ai berhasil.");
+    if (!ok) throw new AppError(502, "telegram_send_failed", "upstream", "Telegram gagal mengirim pesan.", "Coba hubungkan ulang.");
+    return json({ ok: true });
+  }
+  if (b.action === "unlink") { cfg.chatId = null; await putCfg(env, cfg); return json({ ok: true, ...view(cfg) }); }
+  throw new AppError(400, "bad_request", "client", "Aksi tidak dikenal.");
+}
+// ---------- Webhook Telegram ----------
+async function telegramHook(request, env, rid) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.CHATS || !env.SESSION_SECRET) throw new AppError(404, "not_found", "worker", "Tidak aktif.");
+  if (!safeEq(request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "", await webhookSecret(env))) throw new AppError(401, "bad_secret", "auth", "Rahasia webhook salah.");
+  const u = await request.json().catch(() => null), msg = u && u.message;
+  if (!msg || typeof msg.text !== "string" || !msg.chat) return json({ ok: true });
+  const chatId = msg.chat.id, text = msg.text.trim(), cfg = await getCfg(env), reply = t => tgSend(env, chatId, t);
+  try {
+    const m = /^\/start(?:@\w+)?\s+(\d{6})$/.exec(text);
+    if (m) {
+      const pr = await env.CHATS.get("tg:pair", "json");
+      if (pr && pr.exp > Date.now() && safeEq(String(pr.code), m[1])) {
+        cfg.chatId = chatId; await putCfg(env, cfg); await env.CHATS.delete("tg:pair");
+        await reply("✅ Terhubung. Notifikasi didinska.ai akan masuk ke chat ini.\nKetik /help untuk daftar perintah.");
+      } else log("warn", rid, "tg_pair_bad", {});
+      return json({ ok: true });
+    }
+    if (!cfg.chatId || chatId !== cfg.chatId) { log("warn", rid, "tg_unknown_chat", {}); return json({ ok: true }); }
+    await tgCommand(env, cfg, text, reply, rid);
+  } catch (e) { log("error", rid, "tg_cmd_fail", { msg: String((e && e.message) || e) }); await reply("Terjadi kesalahan saat memproses perintah.").catch(() => {}); }
+  return json({ ok: true });
+}
+async function tgCommand(env, cfg, text, reply, rid) {
+  const [cmd0, ...rest] = text.split(/\s+/), cmd = cmd0.toLowerCase().replace(/@\w+$/, ""), arg = rest.join(" ");
+  const wall = wibNow();
+  if (cmd === "/help" || cmd === "/start") return reply("Perintah:\n/status — harga, pasar, sinyal menunggu\n/sinyal — sinyal yang masih berjalan\n/akurasi — ringkasan hasil\n/alert 4150 — pasang alert harga\n/alerts — daftar alert\n/hapusalert 1 — hapus alert (atau all)");
+  if (cmd === "/status") {
+    let px = "-";
+    try { const j = await tdSeries(env, rid, "XAU/USD", "5min"); const c = j.values[j.values.length - 1]; px = `${fmt(c.c)} (candle ${c.t.slice(5, 16)} WIB)`; } catch { px = "tidak bisa diambil"; }
+    const items = await listSigs(env), pend = items.filter(x => x.g !== "-" && !(x.si && x.si !== "pending" && x.d)).filter(x => x.s === "pending").length;
+    const nx = NEWS_EV.map(([d, t, z, n]) => ({ ms: zUtc(d, t, ZONES[z]), n })).filter(e => e.ms > Date.now()).sort((a, b) => a.ms - b.ms)[0];
+    return reply(`<b>XAU/USD</b> ${px}\nPasar: ${marketOpen() ? "buka" : "tutup"}\nSinyal menunggu: ${pend}\nAlert aktif: ${(await getAlerts(env)).length}${nx ? `\nNews berikutnya: ${H(nx.n)} (${wibStr(nx.ms + 7 * 36e5)})` : ""}`);
+  }
+  if (cmd === "/sinyal") {
+    const items = (await listSigs(env)).filter(x => x.s === "pending" && (x.g === "B" || x.g === "S")).slice(0, 5);
+    if (!items.length) return reply("Tidak ada sinyal BUY/SELL yang sedang berjalan.");
+    const lines = [];
+    for (const it of items) { const r = await env.CHATS.get(it.key, "json"); if (r && r.sig) lines.push(`<b>${r.sig.type}</b> ${fmt(r.sig.entry)} · SL ${fmt(r.sig.sl)} · TP1 ${fmt(r.sig.tp1)} · ${wibStr(r.ts)}`); }
+    return reply(lines.join("\n") || "Tidak ada sinyal berjalan.");
+  }
+  if (cmd === "/akurasi") { const s = summarize(await listSigs(env), 0); return reply(s.n ? msgSummary("Akurasi semua sinyal", s) : "Belum ada sinyal tersimpan."); }
+  if (cmd === "/alerts") { const a = await getAlerts(env); return reply(a.length ? a.map((x, i) => `${i + 1}. ${x.dir === "up" ? "naik ≥" : "turun ≤"} ${fmt(x.p)}`).join("\n") : "Belum ada alert aktif."); }
+  if (cmd === "/hapusalert") {
+    let a = await getAlerts(env);
+    if (arg.toLowerCase() === "all") a = []; else { const i = parseInt(arg, 10) - 1; if (!(i >= 0 && i < a.length)) return reply("Pakai: /hapusalert 1 (nomor dari /alerts) atau /hapusalert all"); a.splice(i, 1); }
+    await putAlerts(env, a); return reply("Alert dihapus.");
+  }
+  if (cmd === "/alert") {
+    const p = numOf(arg); if (p == null || p <= 0) return reply("Pakai: /alert 4150");
+    const a = await getAlerts(env); if (a.length >= 5) return reply("Maksimal 5 alert aktif.");
+    const j = await tdSeries(env, rid, "XAU/USD", "5min"), px = j.values[j.values.length - 1].c;
+    if (Math.abs(p - px) < 0.01) return reply("Level sama dengan harga sekarang.");
+    a.push({ id: Math.random().toString(36).slice(2, 8), p, dir: p > px ? "up" : "down", ts: wall }); await putAlerts(env, a);
+    return reply(`Alert dipasang: ${p > px ? "naik ke ≥" : "turun ke ≤"} ${fmt(p)} (harga ${fmt(px)})`);
+  }
+  return reply("Perintah tidak dikenal. Ketik /help.");
+}
+
 export default {
+  // Cron (lihat wrangler.jsonc): menilai sinyal, memeriksa alert, dan mengirim notifikasi Telegram walau web tertutup.
+  async scheduled(event, env, ctx) { ctx.waitUntil(cronRun(env)); },
   async fetch(request, env, ctx) {
     const rid = crypto.randomUUID().slice(0, 8);
     const t0 = Date.now();
@@ -548,6 +1022,10 @@ export default {
       else if (p === "/api/models" && m === "GET") res = await models(request, env, rid);
       else if (p === "/api/forex" && m === "GET") res = await forex(request, env, rid);
       else if (p === "/api/admin/codes" && (m === "GET" || m === "POST")) res = await adminCodes(request, env, rid);
+      else if (p === "/api/signals" && (m === "GET" || m === "POST")) res = await signalsApi(request, env, rid);
+      else if (p === "/api/alerts" && (m === "GET" || m === "POST")) res = await alertsApi(request, env, rid);
+      else if (p === "/api/notify" && m === "POST") res = await notifyApi(request, env, rid);
+      else if (p === "/api/telegram" && m === "POST") res = await telegramHook(request, env, rid);
       else if (p === "/api/diag" && m === "GET") res = await diag(request, env, rid);
       else throw new AppError(404, "not_found", "worker", `Path tidak dikenal: ${m} ${p}`, "Cek alamat API di docs/index.html.");
     } catch (e) {
@@ -563,3 +1041,6 @@ export default {
     return withCors(res, origin, rid);
   },
 };
+
+// Hanya untuk uji otomatis (tidak aktif di produksi).
+if (globalThis.__TEST__) globalThis.__W = { judgeTrade, judgeWait, evalRecord, cleanRec, metaOf, summarize, marketOpen, zUtc, inQuiet, cleanCfg, cronRun, evalAll, tgCommand, NEWS_EV, P, listSigs, getCfg };
