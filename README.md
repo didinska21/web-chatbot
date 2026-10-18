@@ -29,8 +29,8 @@ web-chatbot/
 |---|---|
 | `PIN` | PIN untuk masuk (6 digit atau lebih) |
 | `SESSION_SECRET` | Teks acak panjang (`openssl rand -hex 32`) |
-| `API_URL` | Endpoint API AI, misalnya `https://api.groq.com/openai/v1/chat/completions` |
-| `API_KEY` | API key |
+| `API_URL` | Alamat lengkap endpoint chat, **harus berakhir `/chat/completions`**, bukan hanya base URL. Contoh: `https://codecraftapi.com/v1/chat/completions` (Groq: `https://api.groq.com/openai/v1/chat/completions`) |
+| `API_KEY` | Key provider API. **Boleh banyak key dipisah koma**: `key1,key2,key3`. Jika satu variabel kepanjangan (batas Cloudflare sekitar 5 KB), tambah variabel `API_KEY_2`, `API_KEY_3`, dan seterusnya. Key yang saldonya habis atau ditolak dilewati otomatis |
 | `MODEL` | Nama model, misalnya `openai/gpt-oss-120b` |
 | `TWELVEDATA_KEY` | API key Twelve Data untuk menu Grafik XAU/USD (opsional, hanya dipakai Worker) |
 | `GUEST_TRIAL_MIN` | Opsional. Lama trial kode tamu dalam menit (bawaan 60) |
@@ -98,3 +98,10 @@ Analisa AI memakai jalur khusus tanpa batas 60 detik: Worker langsung membuka st
 - **Telegram**: buat bot di @BotFather, isi Secret `TELEGRAM_BOT_TOKEN`, Deploy, lalu di menu Notifikasi tekan Hubungkan Telegram. Webhook didaftarkan otomatis dan hanya menuruti chat yang sudah dipasangkan. Perintah: `/status`, `/sinyal`, `/akurasi`, `/alert 4150`, `/alerts`, `/hapusalert 1`, `/help`.
 - Daftar event news untuk pengingat ada di `NEWS_EV` di `worker.js`. Daftar yang sama ada di `NWV` di `docs/index.html`; jika salah satu diubah, ubah keduanya.
 - Maksimal 300 sinyal tersimpan (yang tertua dipangkas). Riwayat lama di localStorage diunggah sekali otomatis.
+
+## Banyak API key
+
+- Key dipakai berurutan sesuai daftar. Kalau provider menjawab 402 (saldo habis), 401 atau 403 (key ditolak), Worker langsung mencoba key berikutnya dan penggunanya tidak melihat error. Key dengan 402 ditandai 6 jam, key dengan 401 atau 403 ditandai 24 jam, lalu dicoba lagi otomatis. Rate limit (429) mengistirahatkan key 1 menit. Error 400, 404, dan 422 bukan salah key, jadi tidak memutar key.
+- Satu permintaan mencoba maksimal 12 key. Jika semuanya gagal, pesan error menyebut berapa key yang dicoba dan penyebabnya.
+- Penanda disimpan di KV `CHATS` sebagai sidik jari SHA-256 yang dipotong, bukan key aslinya. Key tidak pernah dicatat di log atau dikirim ke browser.
+- Status ada di **Diagnosa koneksi** dan di bot Telegram: `/keys` (status) dan `/resetkey` (hapus penanda setelah top up).
