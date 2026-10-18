@@ -158,10 +158,11 @@ const HINTS = {
   400: "Permintaan ditolak provider. Biasanya MODEL salah/tidak didukung atau format pesan tidak cocok.",
   401: "API_KEY salah, kedaluwarsa, atau bukan milik provider di API_URL ini.",
   403: "API_KEY tidak punya akses ke model/endpoint ini.",
+  402: "Saldo atau kredit akun di provider habis (atau paketmu tidak mencakup model ini). Top up di dashboard provider, atau pilih model lain yang lebih murah.",
   404: "API_URL salah (path harus berakhir /chat/completions) atau MODEL tidak ada.",
   429: "Kuota atau rate limit provider habis. Tunggu sebentar atau ganti API key.",
 };
-async function upstreamError(res, rid, label) {
+async function upstreamError(res, rid, label, note = "") {
   let full = "";
   try { full = await res.text(); } catch {}
   let detail = full;
@@ -173,26 +174,105 @@ async function upstreamError(res, rid, label) {
   detail = detail.replace(/\s+/g, " ").slice(0, 300);
   const hint = HINTS[res.status] || (res.status >= 500 ? "Provider sedang bermasalah (5xx). Coba lagi nanti." : "Lihat pesan dari provider.");
   log("error", rid, "upstream_error", { label, status: res.status, detail });
-  return new AppError(502, "upstream_error", "upstream", `Provider API menjawab ${res.status}: ${detail || res.statusText}`, hint, { upstream_status: res.status });
+  return new AppError(502, "upstream_error", "upstream", `Provider API menjawab ${res.status}: ${detail || res.statusText}`, hint + (note ? " " + note : ""), { upstream_status: res.status });
 }
-async function callUpstream(rid, url, init, label) {
-  const host = new URL(url).host;
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 60000); // batas menunggu jawaban awal, bukan lama stream
-  const t0 = Date.now();
+// ===== Banyak API key =====
+// Isi Secret API_KEY dengan beberapa key dipisah koma. Variabel tambahan API_KEY_2, API_KEY_3, dan seterusnya juga dibaca
+// (satu variabel dibatasi sekitar 5 KB oleh Cloudflare, jadi daftar yang panjang dibagi ke beberapa variabel).
+// Key yang saldonya habis (402) atau ditolak (401/403) dilewati otomatis; yang kena rate limit (429) diistirahatkan 1 menit.
+function apiKeys(env) {
+  const names = Object.keys(env).filter(k => /^API_KEY(_\d+)?$/.test(k)).sort((a, b) => (parseInt(a.slice(8)) || 1) - (parseInt(b.slice(8)) || 1));
+  const seen = new Set(), out = [];
+  for (const n of names) for (const raw of String(env[n] || "").split(/[,\s]+/)) { const k = raw.trim(); if (k && !seen.has(k)) { seen.add(k); out.push(k); } }
+  return out;
+}
+function needKeys(env) {
+  if (!apiKeys(env).length) throw new AppError(500, "config_missing", "config", "API_KEY belum diisi.", "Isi Secret API_KEY. Boleh beberapa key dipisah koma.", { missing: ["API_KEY"] });
+}
+const keyMem = { ids: new Map(), dead: null, deadT: 0, cool: new Map() };
+async function keyId(k) {
+  let h = keyMem.ids.get(k);
+  if (!h) { const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(k)); h = [...new Uint8Array(d)].slice(0, 6).map(x => x.toString(16).padStart(2, "0")).join(""); keyMem.ids.set(k, h); }
+  return h; // hanya sidik jari yang disimpan dan dicatat, bukan key-nya
+}
+async function deadMap(env, fresh) {
+  if (!env.CHATS) return keyMem.dead || {};
+  if (!fresh && keyMem.dead && Date.now() - keyMem.deadT < 30000) return keyMem.dead;
+  const d = (await env.CHATS.get("keys:dead", "json")) || {}, now = Date.now();
+  for (const k of Object.keys(d)) if (!(d[k].until > now)) delete d[k];
+  keyMem.dead = d; keyMem.deadT = now;
+  return d;
+}
+async function saveDead(env, d) {
+  keyMem.dead = d; keyMem.deadT = Date.now();
+  if (env.CHATS) await env.CHATS.put("keys:dead", JSON.stringify(d), { expirationTtl: 86400 + 3600 });
+}
+async function markDead(env, key, status) {
+  const d = { ...(await deadMap(env, true)) };
+  d[await keyId(key)] = { until: Date.now() + (status === 402 ? 6 : 24) * 3600e3, why: status };
+  await saveDead(env, d);
+}
+async function unmarkDead(env, id) { const d = { ...(await deadMap(env, true)) }; delete d[id]; await saveDead(env, d); }
+async function keyStatus(env) {
+  const keys = apiKeys(env), dead = await deadMap(env), now = Date.now();
+  let alive = 0, saldo = 0, ditolak = 0, cooling = 0;
+  for (const k of keys) {
+    const id = await keyId(k), d = dead[id], c = keyMem.cool.get(id);
+    if (d) { if (d.why === 402) saldo++; else ditolak++; } else if (c && c > now) cooling++; else alive++;
+  }
+  return { total: keys.length, alive, saldo, ditolak, cooling };
+}
+// Mencoba key satu per satu sampai ada yang berhasil. 400/404/422 bukan salah key, jadi langsung dikembalikan.
+async function withKeys(env, rid, label, fn) {
+  const keys = apiKeys(env), dead = await deadMap(env), now = Date.now(), alive = [];
+  for (const k of keys) { const id = await keyId(k), c = keyMem.cool.get(id); if (!dead[id] && !(c && c > now)) alive.push(k); }
+  const cand = (alive.length ? alive : keys.slice(0, 3)).slice(0, 12), tally = { saldo: 0, ditolak: 0, limit: 0, error: 0 };
+  const done = extra => ({ tried, total: keys.length, alive: alive.length, tally, ...extra });
+  let last = null, tried = 0;
+  for (const key of cand) {
+    tried++;
+    let res;
+    try { res = await fn(key); }
+    catch (e) { tally.error++; last = { err: e }; if (tried >= 3) break; continue; }
+    if (res.ok) { const id = await keyId(key); if (dead[id]) await unmarkDead(env, id); return done({ res }); }
+    const st = res.status;
+    if (st === 402 || st === 401 || st === 403) {
+      await markDead(env, key, st); tally[st === 402 ? "saldo" : "ditolak"]++;
+      log("warn", rid, "key_dead", { label, status: st, id: await keyId(key), tried });
+      if (last && last.res) await last.res.body?.cancel().catch(() => {});
+      last = { res }; continue;
+    }
+    if (st === 429) { keyMem.cool.set(await keyId(key), Date.now() + 60e3); tally.limit++; if (last && last.res) await last.res.body?.cancel().catch(() => {}); last = { res }; continue; }
+    if (st >= 500) { tally.error++; if (last && last.res) await last.res.body?.cancel().catch(() => {}); last = { res }; if (tried >= 3) break; continue; }
+    return done({ res });
+  }
+  if (!last || last.err) throw (last && last.err) || new AppError(502, "upstream_unreachable", "upstream", "Tidak ada API key yang bisa dipakai.", "Isi atau tambah Secret API_KEY.");
+  return done({ res: last.res, failed: true });
+}
+function keyNote(r) {
+  if (!(r.failed || r.tried > 1)) return "";
+  const t = r.tally, parts = [t.saldo && `${t.saldo} saldo habis`, t.ditolak && `${t.ditolak} ditolak`, t.limit && `${t.limit} kena rate limit`, t.error && `${t.error} error`].filter(Boolean).join(", ");
+  return `${r.tried} dari ${r.total} API key dicoba${parts ? " (" + parts + ")" : ""}.${r.failed ? " Top up saldo atau tambahkan key baru di Secret API_KEY." : ""}`;
+}
+// Satu permintaan ke provider tanpa melempar error untuk status non-2xx (kecuali jaringan/timeout).
+async function rawUpstream(rid, url, init, label, ms = 60000) {
+  const host = new URL(url).host, ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms), t0 = Date.now();
   let res;
-  try {
-    res = await fetch(url, { ...init, signal: ctl.signal });
-  } catch (e) {
+  try { res = await fetch(url, { ...init, signal: ctl.signal }); }
+  catch (e) {
     const timeout = e && e.name === "AbortError";
     log("error", rid, "upstream_fail", { label, host, timeout, msg: String((e && e.message) || e) });
     throw new AppError(timeout ? 504 : 502, timeout ? "upstream_timeout" : "upstream_unreachable", "upstream",
-      timeout ? "Provider API tidak menjawab dalam 60 detik." : "Worker tidak bisa menghubungi provider API.",
+      timeout ? "Provider API tidak menjawab dalam " + Math.round(ms / 1000) + " detik." : "Worker tidak bisa menghubungi provider API.",
       "Cek ejaan API_URL dan apakah provider sedang down.");
   } finally { clearTimeout(timer); }
   log(res.ok ? "info" : "warn", rid, "upstream", { label, host, status: res.status, ms: Date.now() - t0 });
-  if (!res.ok) throw await upstreamError(res, rid, label);
   return res;
+}
+async function callUpstreamK(env, rid, url, mkInit, label) {
+  const r = await withKeys(env, rid, label, key => rawUpstream(rid, url, mkInit(key), label, 60000));
+  if (!r.res.ok) throw await upstreamError(r.res, rid, label, keyNote(r));
+  return r.res;
 }
 const modelIds = j => ((j && (j.data || j.models)) || []).map(m => typeof m === "string" ? m : m.id || m.name).filter(Boolean);
 
@@ -304,8 +384,8 @@ async function chats(request, env, rid) {
 
 async function models(request, env, rid) {
   await requireAuth(request, env, rid);
-  need(env, ["API_URL", "API_KEY"]);
-  const res = await callUpstream(rid, upstreamUrl(env, "models"), { headers: { Authorization: "Bearer " + env.API_KEY } }, "models");
+  need(env, ["API_URL"]); needKeys(env);
+  const res = await callUpstreamK(env, rid, upstreamUrl(env, "models"), key => ({ headers: { Authorization: "Bearer " + key } }), "models");
   const ids = modelIds(await res.json().catch(() => null)).sort();
   if (!ids.length) throw new AppError(502, "upstream_bad_format", "upstream", "Daftar model kosong atau formatnya tidak dikenali.", "Provider mungkin tidak menyediakan /models. Isi Secret MODEL secara manual.");
   return json({ ok: true, models: ids, default: env.MODEL || "" });
@@ -397,8 +477,8 @@ async function diag(request, env, rid) {
       add("API_URL", okPath, env.API_URL + (okPath ? "" : "\n    path tidak berakhir /chat/completions (kemungkinan salah)"));
     } catch { add("API_URL", false, "bukan URL yang valid (harus diawali https://)"); }
   }
-  const k = String(env.API_KEY || "");
-  add("API_KEY", !!k, k ? "terisi, awalan " + (k.includes("_") ? k.split("_")[0] + "_" : k.slice(0, 3) + "…") : "belum diisi");
+  const ks = await keyStatus(env), k0 = apiKeys(env)[0] || "";
+  add("API_KEY", ks.total > 0, ks.total ? (ks.total > 1 ? `${ks.total} key (${ks.alive} aktif, ${ks.saldo} saldo habis, ${ks.ditolak} ditolak, ${ks.cooling} istirahat)` : "terisi") + ", awalan " + (k0.includes("_") ? k0.split("_")[0] + "_" : k0.slice(0, 3) + "…") : "belum diisi");
   add("MODEL", true, env.MODEL || "(kosong, model dipilih dari sidebar)");
   add("TELEGRAM_BOT_TOKEN", true, env.TELEGRAM_BOT_TOKEN ? "terisi (notifikasi Telegram)" : "belum diisi (opsional, untuk notifikasi Telegram)");
   add("TWELVEDATA_KEY", !!env.TWELVEDATA_KEY, env.TWELVEDATA_KEY ? "terisi (grafik XAU/USD)" : "belum diisi (menu Grafik XAU/USD tidak akan jalan)");
@@ -406,10 +486,10 @@ async function diag(request, env, rid) {
   else { try { await env.CHATS.get("chats"); add("KV CHATS", true, "bisa dibaca"); } catch (e) { add("KV CHATS", false, String(e.message || e)); } }
   const reqOrigin = request.headers.get("Origin") || "";
   add("ALLOWED_ORIGINS", !!allowedOrigin(request, env), (reqOrigin ? reqOrigin + " → " : "") + originList(env).join(", "));
-  if (urlOk && k) {
+  if (urlOk && ks.total) {
     const t0 = Date.now();
     try {
-      const res = await callUpstream(rid, upstreamUrl(env, "models"), { headers: { Authorization: "Bearer " + k } }, "diag-models");
+      const res = await callUpstreamK(env, rid, upstreamUrl(env, "models"), key => ({ headers: { Authorization: "Bearer " + key } }), "diag-models");
       const ids = modelIds(await res.json().catch(() => null));
       add("Provider (GET /models)", true, `HTTP ${res.status}, ${ids.length} model, ${Date.now() - t0} ms`);
       if (env.MODEL) {
@@ -452,27 +532,31 @@ function longChat(env, rid, ctx, body, model, extras) {
       raw(": start\n\n");
       const tries = [...extras, {}];
       let res = null, used = -1;
+      let kr = null;
       for (let i = 0; i < tries.length; i++) {
-        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20 * 60e3);
-        try {
-          res = await fetch(env.API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.API_KEY },
-            body: JSON.stringify({ ...body, model, ...tries[i] }),
-            signal: ctl.signal,
-          });
-        } finally { clearTimeout(timer); }
-        log(res.ok ? "info" : "warn", rid, "upstream", { label: "chat-long", host, status: res.status, ms: Date.now() - t0, attempt: i });
+        kr = await withKeys(env, rid, "chat-long", async key => {
+          const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20 * 60e3);
+          try {
+            return await fetch(env.API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+              body: JSON.stringify({ ...body, model, ...tries[i] }),
+              signal: ctl.signal,
+            });
+          } finally { clearTimeout(timer); }
+        });
+        res = kr.res;
+        log(res.ok ? "info" : "warn", rid, "upstream", { label: "chat-long", host, status: res.status, ms: Date.now() - t0, attempt: i, keysTried: kr.tried });
         if (res.ok) { used = i; break; }
         if ((res.status === 400 || res.status === 422) && i < tries.length - 1) continue;
         break;
       }
       if (!res.ok) {
-        const e = await upstreamError(res, rid, "chat");
+        const e = await upstreamError(res, rid, "chat", keyNote(kr));
         ev({ error: { message: e.message, code: e.code, hint: e.hint } });
         return;
       }
-      ev({ meta: { think: used < extras.length ? "param" : "none", attempt: used, model } });
+      ev({ meta: { think: used < extras.length ? "param" : "none", attempt: used, model, key: kr.tried, keys: kr.total } });
       if ((res.headers.get("content-type") || "").includes("event-stream")) {
         const rd = res.body.getReader();
         for (;;) {
@@ -499,7 +583,7 @@ function longChat(env, rid, ctx, body, model, extras) {
 async function chat(request, env, rid, ctx) {
   const au = await requireAuth(request, env, rid);
   guestCap(au, "chat");
-  need(env, ["API_URL", "API_KEY"]);
+  need(env, ["API_URL"]); needKeys(env);
   checkApiUrl(env);
   let body;
   try { body = await request.json(); }
@@ -512,11 +596,11 @@ async function chat(request, env, rid, ctx) {
   delete body.longThink; delete body.depth;
   log("info", rid, "chat", { model, msgs: body.messages.length, stream: !!body.stream, chars: JSON.stringify(body.messages).length, long, depth });
   if (long) return longChat(env, rid, ctx, body, model, reasoningTries(env, depth));
-  const res = await callUpstream(rid, env.API_URL, {
+  const res = await callUpstreamK(env, rid, env.API_URL, key => ({
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.API_KEY },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
     body: JSON.stringify({ ...body, model }),
-  }, "chat");
+  }), "chat");
   return new Response(res.body, {
     status: 200,
     headers: { "Content-Type": res.headers.get("Content-Type") || "application/json", "Cache-Control": "no-store" },
@@ -958,7 +1042,7 @@ async function telegramHook(request, env, rid) {
 async function tgCommand(env, cfg, text, reply, rid) {
   const [cmd0, ...rest] = text.split(/\s+/), cmd = cmd0.toLowerCase().replace(/@\w+$/, ""), arg = rest.join(" ");
   const wall = wibNow();
-  if (cmd === "/help" || cmd === "/start") return reply("Perintah:\n/status — harga, pasar, sinyal menunggu\n/sinyal — sinyal yang masih berjalan\n/akurasi — ringkasan hasil\n/alert 4150 — pasang alert harga\n/alerts — daftar alert\n/hapusalert 1 — hapus alert (atau all)");
+  if (cmd === "/help" || cmd === "/start") return reply("Perintah:\n/status — harga, pasar, sinyal menunggu\n/sinyal — sinyal yang masih berjalan\n/akurasi — ringkasan hasil\n/alert 4150 — pasang alert harga\n/alerts — daftar alert\n/hapusalert 1 — hapus alert (atau all)\n/keys — status API key\n/resetkey — hapus penanda key habis");
   if (cmd === "/status") {
     let px = "-";
     try { const j = await tdSeries(env, rid, "XAU/USD", "5min"); const c = j.values[j.values.length - 1]; px = `${fmt(c.c)} (candle ${c.t.slice(5, 16)} WIB)`; } catch { px = "tidak bisa diambil"; }
@@ -974,6 +1058,8 @@ async function tgCommand(env, cfg, text, reply, rid) {
     return reply(lines.join("\n") || "Tidak ada sinyal berjalan.");
   }
   if (cmd === "/akurasi") { const s = summarize(await listSigs(env), 0); return reply(s.n ? msgSummary("Akurasi semua sinyal", s) : "Belum ada sinyal tersimpan."); }
+  if (cmd === "/keys") { const k = await keyStatus(env); return reply(`🔑 API key: <b>${k.total}</b> total\nAktif: ${k.alive} · saldo habis: ${k.saldo} · ditolak: ${k.ditolak} · istirahat (rate limit): ${k.cooling}\nKey yang saldonya habis dicoba lagi otomatis setelah 6 jam. Ketik /resetkey kalau sudah top up.`); }
+  if (cmd === "/resetkey") { await saveDead(env, {}); keyMem.cool.clear(); return reply("Penanda key habis dihapus. Semua key dicoba lagi."); }
   if (cmd === "/alerts") { const a = await getAlerts(env); return reply(a.length ? a.map((x, i) => `${i + 1}. ${x.dir === "up" ? "naik ≥" : "turun ≤"} ${fmt(x.p)}`).join("\n") : "Belum ada alert aktif."); }
   if (cmd === "/hapusalert") {
     let a = await getAlerts(env);
@@ -1043,4 +1129,4 @@ export default {
 };
 
 // Hanya untuk uji otomatis (tidak aktif di produksi).
-if (globalThis.__TEST__) globalThis.__W = { judgeTrade, judgeWait, evalRecord, cleanRec, metaOf, summarize, marketOpen, zUtc, inQuiet, cleanCfg, cronRun, evalAll, tgCommand, NEWS_EV, P, listSigs, getCfg };
+if (globalThis.__TEST__) globalThis.__W = { apiKeys, keyStatus, keyMem, judgeTrade, judgeWait, evalRecord, cleanRec, metaOf, summarize, marketOpen, zUtc, inQuiet, cleanCfg, cronRun, evalAll, tgCommand, NEWS_EV, P, listSigs, getCfg };
