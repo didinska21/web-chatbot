@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upscale Story WA</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#128c4a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#edf2ef;--panel:#fff;--ink:#10231f;--mute:#5b706a;--line:#c9d6cf;--acc:#128c4a;--accink:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1815;--panel:#16251f;--ink:#e6f0eb;--mute:#8fa59d;--line:#2a3d36;--acc:#2fbf71;--accink:#06140d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:30rem;margin:0 auto;padding:1.25rem 1rem 3rem}
+h1{font-size:1.6rem;line-height:1.15;margin:.5rem 0 .25rem;letter-spacing:-.02em}
+p.sub{margin:0 0 1.25rem;color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem;margin-bottom:1rem}
+label{display:block;font-weight:600;margin:.75rem 0 .35rem}
+label:first-child{margin-top:0}
+input[type=file],select,textarea{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:10px;padding:.65rem}
+textarea{min-height:4.5rem;resize:vertical}
+.chk{display:flex;gap:.5rem;align-items:center;margin-top:.75rem;font-weight:400}
+.chk input{width:1.1rem;height:1.1rem}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:.8rem 1rem;background:var(--acc);color:var(--accink);width:100%;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.6rem}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:.75rem}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--acc) 0 12px,color-mix(in srgb,var(--acc) 65%,#fff) 12px 24px);background-size:34px 34px;animation:stripe .8s linear infinite;transition:width .25s}
+.stat{display:grid;grid-template-columns:1fr auto auto;gap:.9rem;font-size:.85rem;color:var(--mute);margin-top:.45rem}
+.spin{display:inline-block;width:.9em;height:.9em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite;vertical-align:-.12em;margin-right:.5rem}
+#info{margin:.4rem 0 0;font-size:.85rem;color:var(--mute)}
+button.busy{animation:pulse 1.4s ease-in-out infinite}
+#out:not([hidden]){animation:pop .35s ease-out}
+@keyframes stripe{to{background-position:34px 0}}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{opacity:.65}}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){.bar i,.spin,button.busy,#out:not([hidden]){animation:none}}
+#msg{margin:.6rem 0 0;color:var(--mute);font-size:.9rem;min-height:1.3em}
+#msg.err{color:#c0392b}
+#out img,#out video{width:100%;max-height:60vh;object-fit:contain;border-radius:10px;background:#000;display:block}
+#pv{width:100%;max-height:38vh;border-radius:10px;background:#000;display:block}
+input[type=range]{width:100%;accent-color:var(--acc)}
+#tlab{margin:.4rem 0 0;font-size:.85rem;color:var(--mute)}
+#install{margin-top:.2rem}
+.hint{font-size:.8rem;color:var(--mute);text-align:center;margin:.8rem 0 0}
+.back{display:inline-block;color:var(--mute);text-decoration:none;font-size:.9rem;padding:.4rem 0}
+.back:hover{color:var(--ink)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="../">← Beranda</a>
+<h1>Upscale Story WA</h1>
+<p class="sub">Foto dan video diubah ke 1080×1920 di perangkatmu sendiri. File tidak diunggah ke server.</p>
+
+<section class="card">
+  <label for="file">Foto atau video asli</label>
+  <input id="file" type="file" accept="image/*,video/*">
+  <p id="info"></p>
+
+  <label for="mode">Bingkai</label>
+  <select id="mode">
+    <option value="cover">Isi penuh layar (sisi dipotong)</option>
+    <option value="contain">Muat semua (ada bingkai hitam)</option>
+  </select>
+
+  <label for="quality">Kualitas video</label>
+  <select id="quality">
+    <option value="good">Bagus (lebih lambat)</option>
+    <option value="fast">Cepat (file sedikit lebih kasar)</option>
+  </select>
+
+  <label for="caption">Caption</label>
+  <textarea id="caption" placeholder="Tulis caption story (opsional)"></textarea>
+
+  <label class="chk" id="aibox" hidden><input id="ai" type="checkbox"> Upscale AI untuk foto (lebih tajam, model diunduh sekali)</label>
+
+  <div id="trimbox" hidden>
+    <label for="pv">Potong video</label>
+    <video id="pv" controls playsinline muted></video>
+    <label for="t0">Mulai</label><input id="t0" type="range" min="0" max="1" step="0.1" value="0">
+    <label for="t1">Selesai</label><input id="t1" type="range" min="0" max="1" step="0.1" value="1">
+    <p id="tlab"></p>
+  </div>
+
+  <div style="margin-top:1rem"><button id="go" disabled>Proses</button></div>
+  <div id="barwrap" hidden>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="stat"><span id="stage"></span><span id="pct">0%</span><span id="time">0:00</span></div>
+  </div>
+  <p id="msg" role="status"></p>
+</section>
+
+<section class="card" id="out" hidden>
+  <div id="preview"></div>
+  <div class="row">
+    <button id="share">Bagikan ke WA</button>
+    <button id="save" class="ghost">Simpan file</button>
+  </div>
+  <div class="row" style="grid-template-columns:1fr">
+    <button id="copy" class="ghost">Salin caption</button>
+  </div>
+</section>
+<button id="install" class="ghost" hidden>Pasang sebagai aplikasi</button>
+<p class="hint">iPhone: ikon Bagikan, lalu "Tambah ke Layar Utama".</p>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const CDN = 'https://cdn.jsdelivr.net/npm';
+const W = 1080, H = 1920;
+let ff = null, result = null, note = '', aiUpscaler = null, dur = 0;
+
+const msg = (t, err) => { const m = $('#msg'); m.textContent = t; m.className = err ? 'err' : ''; };
+const prog = p => { const v = Math.round(Math.min(1, Math.max(0, p)) * 100); $('#bar').style.width = v + '%'; $('#pct').textContent = v + '%'; };
+const stage = t => { const s = $('#stage'); s.textContent = ''; const sp = document.createElement('span'); sp.className = 'spin'; s.append(sp, t); };
+const fmt = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0]; $('#go').disabled = !f; msg(''); $('#info').textContent = '';
+  $('#trimbox').hidden = true; $('#aibox').hidden = true;
+  if (!f) return;
+  let w = 0, h = 0;
+  try {
+    if (f.type.startsWith('video/')) {
+      const v = $('#pv'); v.src = URL.createObjectURL(f);
+      await new Promise((ok, no) => { v.onloadedmetadata = ok; v.onerror = no; });
+      w = v.videoWidth; h = v.videoHeight; setupTrim(v.duration);
+    } else { $('#aibox').hidden = false; const b = await createImageBitmap(f); w = b.width; h = b.height; }
+  } catch (_) {}
+  let t = 'Asli: ' + (w ? w + '×' + h + ' · ' : '') + (f.size / 1048576).toFixed(1) + ' MB';
+  if (w && Math.max(w, h) < 1280) t += '. Resolusi kecil: hasil lebih halus, tapi detail baru tidak muncul.';
+  $('#info').textContent = t;
+});
+
+async function blobURL(url, type, onp) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Gagal mengunduh ' + url);
+  const total = +r.headers.get('content-length') || 0, parts = []; let got = 0;
+  const rd = r.body.getReader();
+  for (;;) {
+    const { done, value } = await rd.read();
+    if (done) break;
+    parts.push(value); got += value.length;
+    if (onp && total) onp(got / total);
+  }
+  return URL.createObjectURL(new Blob(parts, { type }));
+}
+
+async function loadFF() {
+  if (ff) return ff;
+  stage('Mengunduh mesin video (sekali saja, ±30 MB)'); prog(0);
+  const { FFmpeg } = await import(`${CDN}/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js`);
+  const f = new FFmpeg();
+  f.on('progress', ({ progress }) => prog(Math.min(1, Math.max(0, progress))));
+  const base = `${CDN}/@ffmpeg/core@0.12.6/dist/esm`;
+  const worker = URL.createObjectURL(new Blob(
+    [`import "${CDN}/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js";`], { type: 'text/javascript' }));
+  await f.load({
+    classWorkerURL: worker,
+    coreURL: await blobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await blobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm', prog)
+  });
+  ff = f;
+  return f;
+}
+
+const loadScript = src => new Promise((ok, no) => {
+  const el = document.createElement('script'); el.src = src; el.crossOrigin = 'anonymous';
+  el.onload = ok; el.onerror = () => no(new Error('Gagal memuat ' + src)); document.head.append(el);
+});
+
+async function loadAI() {
+  if (aiUpscaler) return aiUpscaler;
+  stage('Mengunduh model AI (sekali saja)'); prog(0.05);
+  await loadScript(`${CDN}/@tensorflow/tfjs@4.22.0/dist/tf.min.js`); prog(0.3);
+  await loadScript(`${CDN}/upscaler@latest/dist/browser/umd/upscaler.min.js`); prog(0.6);
+  const MV = '1.0.0-beta.12';
+  const res = await fetch(`https://data.jsdelivr.com/v1/package/npm/@upscalerjs/esrgan-slim@${MV}/flat`);
+  const names = (await res.json()).files.map(x => x.name);
+  const file = names.find(n => /\/umd\/.*2x.*\.min\.js$/.test(n)) || names.find(n => /\/umd\/.*x2.*\.min\.js$/.test(n));
+  if (!file) throw new Error('Berkas model AI tidak ditemukan');
+  await loadScript(`${CDN}/@upscalerjs/esrgan-slim@${MV}${file}`); prog(0.9);
+  const g = window.ESRGANSlim2x, model = g && g.default ? g.default : g;
+  if (!model || !window.Upscaler) throw new Error('Model AI tidak terbaca');
+  aiUpscaler = new window.Upscaler({ model });
+  return aiUpscaler;
+}
+
+async function aiUp(bmp) {
+  const up = await loadAI();
+  stage('Upscale AI 2x (bisa lama di HP)'); prog(0);
+  const k = Math.min(1, 1000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const url = await up.upscale(c, { patchSize: 64, padding: 2, progress: p => prog(p) });
+  const img = new Image(); img.src = url; await img.decode();
+  return img;
+}
+
+function setupTrim(d) {
+  dur = d; const a = $('#t0'), b = $('#t1');
+  a.max = b.max = d.toFixed(1); a.value = 0; b.value = Math.min(d, 30).toFixed(1);
+  $('#trimbox').hidden = false; tlab();
+}
+const tfmt = s => fmt(s * 1000) + '.' + Math.floor((s % 1) * 10);
+function tlab() {
+  const s = +$('#t0').value, e = +$('#t1').value, len = e - s;
+  $('#tlab').textContent = `Mulai ${tfmt(s)} · Selesai ${tfmt(e)} · Durasi ${len.toFixed(1)} dtk` + (len > 30 ? ' (lebih dari 30 dtk, WA bisa memotongnya)' : '');
+}
+$('#t0').addEventListener('input', () => {
+  const a = $('#t0'), b = $('#t1');
+  if (+a.value > +b.value - 0.5) a.value = Math.max(0, +b.value - 0.5);
+  $('#pv').currentTime = +a.value; tlab();
+});
+$('#t1').addEventListener('input', () => {
+  const a = $('#t0'), b = $('#t1');
+  if (+b.value < +a.value + 0.5) b.value = Math.min(dur, +a.value + 0.5);
+  $('#pv').currentTime = +b.value; tlab();
+});
+
+async function doVideo(file) {
+  const f = await loadFF();
+  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+  const inName = 'in.' + ext;
+  const cover = $('#mode').value === 'cover';
+  const fit = cover
+    ? `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H}`
+    : `scale=${W}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:black`;
+  const vf = fit + ',unsharp=5:5:0.6:5:5:0.0,setsar=1';
+  stage('Memproses video (bisa beberapa menit, jangan tutup halaman)'); prog(0);
+  const q = $('#quality').value === 'fast' ? { p: 'ultrafast', c: '23' } : { p: 'veryfast', c: '19' };
+  await f.writeFile(inName, new Uint8Array(await file.arrayBuffer()));
+  const args = [];
+  if (!$('#trimbox').hidden) {
+    const ts = +$('#t0').value, te = +$('#t1').value;
+    args.push('-ss', String(ts), '-i', inName, '-t', String(Math.max(0.5, te - ts)));
+  } else args.push('-i', inName);
+  args.push('-vf', vf, '-c:v', 'libx264', '-preset', q.p, '-crf', q.c, '-r', '30',
+    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'out.mp4');
+  const code = await f.exec(args);
+  if (code !== 0) throw new Error('FFmpeg gagal memproses video ini.');
+  const data = await f.readFile('out.mp4');
+  await f.deleteFile(inName); await f.deleteFile('out.mp4');
+  return new File([data], 'story-hd.mp4', { type: 'video/mp4' });
+}
+
+async function doPhoto(file) {
+  stage('Memproses foto'); prog(0);
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  const cover = $('#mode').value === 'cover';
+  const fitS = o => cover ? Math.max(W / o.width, H / o.height) : Math.min(W / o.width, H / o.height);
+  let im = bmp;
+  if ($('#ai').checked && fitS(bmp) > 1) {
+    try { im = await aiUp(bmp); }
+    catch (e) { console.warn(e); note = ' Upscale AI gagal dimuat, dipakai mode biasa.'; }
+    stage('Memproses foto'); prog(0);
+  }
+  const s = fitS(im), w = im.width * s, h = im.height * s;
+  x.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+  // pertajam ringan (unsharp kernel 3x3)
+  const img = x.getImageData(0, 0, W, H), src = new Uint8ClampedArray(img.data), d = img.data, a = 0.3;
+  for (let y0 = 1; y0 < H - 1; y0 += 120) {
+    const y1 = Math.min(y0 + 120, H - 1);
+    for (let y = y0; y < y1; y++) for (let i = 1; i < W - 1; i++) {
+      const p = (y * W + i) * 4;
+      for (let k = 0; k < 3; k++) {
+        d[p + k] = (1 + 4 * a) * src[p + k] - a * (src[p - 4 + k] + src[p + 4 + k] + src[p - W * 4 + k] + src[p + W * 4 + k]);
+      }
+    }
+    prog(y1 / H);
+    await new Promise(r => setTimeout(r));
+  }
+  x.putImageData(img, 0, 0);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
+  return new File([blob], 'story-hd.jpg', { type: 'image/jpeg' });
+}
+
+$('#go').addEventListener('click', async () => {
+  const file = $('#file').files[0];
+  if (!file) return;
+  note = '';
+  const go = $('#go'), t0 = Date.now();
+  go.disabled = true; go.classList.add('busy'); go.textContent = 'Memproses...';
+  $('#out').hidden = true; prog(0); $('#time').textContent = '0:00'; $('#barwrap').hidden = false; msg('');
+  const tm = setInterval(() => { $('#time').textContent = fmt(Date.now() - t0); }, 500);
+  try {
+    result = file.type.startsWith('video/') ? await doVideo(file) : await doPhoto(file);
+    const url = URL.createObjectURL(result);
+    $('#preview').innerHTML = result.type.startsWith('video/')
+      ? `<video src="${url}" controls playsinline></video>` : `<img src="${url}" alt="Hasil">`;
+    $('#out').hidden = false;
+    prog(1); $('#stage').textContent = 'Selesai';
+    msg(`Selesai (${(result.size / 1048576).toFixed(1)} MB). Siap dibagikan.` + note);
+  } catch (e) {
+    console.error(e);
+    msg('Gagal: ' + (e.message || e), true); $('#barwrap').hidden = true;
+  } finally {
+    clearInterval(tm); go.classList.remove('busy'); go.textContent = 'Proses'; go.disabled = false;
+  }
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+let dip = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); dip = e; $('#install').hidden = false; });
+addEventListener('appinstalled', () => { $('#install').hidden = true; });
+$('#install').addEventListener('click', async () => {
+  if (!dip) return; dip.prompt(); await dip.userChoice; dip = null; $('#install').hidden = true;
+});
+
+$('#share').addEventListener('click', async () => {
+  if (!result) return;
+  const data = { files: [result], text: $('#caption').value };
+  if (navigator.canShare && navigator.canShare(data)) {
+    try { await navigator.share(data); } catch (e) { if (e.name !== 'AbortError') msg('Gagal membagikan: ' + e.message, true); }
+  } else {
+    msg('Browser ini tidak bisa membagikan file. Pakai Simpan file, lalu kirim manual.', true);
+  }
+});
+
+$('#save').addEventListener('click', () => {
+  if (!result) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(result); a.download = result.name; a.click();
+});
+
+$('#copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('#caption').value); msg('Caption disalin.'); }
+  catch { msg('Caption tidak bisa disalin otomatis.', true); }
+});
+</script>
+</body>
+</html>

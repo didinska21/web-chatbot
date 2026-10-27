@@ -1,0 +1,16 @@
+{
+  "name": "Upscale Story WA",
+  "short_name": "Upscale Story",
+  "description": "Upscale foto dan video ke HD untuk story WhatsApp",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#edf2ef",
+  "theme_color": "#128c4a",
+  "lang": "id",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
