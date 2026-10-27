@@ -5,28 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upscale Story WA</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#128c4a">
+<meta name="theme-color" content="#E8F8FD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F232A" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-:root{--bg:#edf2ef;--panel:#fff;--ink:#10231f;--mute:#5b706a;--line:#c9d6cf;--acc:#128c4a;--accink:#fff}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1815;--panel:#16251f;--ink:#e6f0eb;--mute:#8fa59d;--line:#2a3d36;--acc:#2fbf71;--accink:#06140d}}
+@font-face{font-family:'Space Mono';font-weight:400;font-style:normal;font-display:swap;src:url(../fonts/space-mono-400.woff2) format('woff2')}
+@font-face{font-family:'Space Mono';font-weight:700;font-style:normal;font-display:swap;src:url(../fonts/space-mono-700.woff2) format('woff2')}
+:root{--bg:#E8F8FD;--panel:#FFFFFF;--ink:#1F232A;--mute:#4F6270;--line:rgba(31,35,42,.14);--acc:#60DAFB;--accink:#10202A;--ring:#0A8FB0;--sh:0 12px 36px rgba(31,35,42,.1)}
+@media (prefers-color-scheme:dark){:root{--bg:#1F232A;--panel:#252A32;--ink:#EEF2F6;--mute:#8B95A3;--line:rgba(255,255,255,.12);--acc:#60DAFB;--accink:#0B1217;--ring:#60DAFB;--sh:0 16px 48px rgba(0,0,0,.4)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{margin:0;min-height:100dvh;background:var(--bg) radial-gradient(60rem 30rem at 50% -10%,color-mix(in srgb,var(--acc) 22%,transparent),transparent) no-repeat;color:var(--ink);font:14px/1.6 'Space Mono',ui-monospace,monospace}
 main{max-width:30rem;margin:0 auto;padding:1.25rem 1rem 3rem}
-h1{font-size:1.6rem;line-height:1.15;margin:.5rem 0 .25rem;letter-spacing:-.02em}
+h1{font-size:1.7rem;line-height:1.15;margin:.5rem 0 .35rem;letter-spacing:-.02em}
 p.sub{margin:0 0 1.25rem;color:var(--mute)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem;margin-bottom:1rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:1.25rem;margin-bottom:1rem;box-shadow:var(--sh)}
 label{display:block;font-weight:600;margin:.75rem 0 .35rem}
 label:first-child{margin-top:0}
-input[type=file],select,textarea{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:10px;padding:.65rem}
+input[type=file],select,textarea{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:12px;padding:.7rem}
 textarea{min-height:4.5rem;resize:vertical}
 .chk{display:flex;gap:.5rem;align-items:center;margin-top:.75rem;font-weight:400}
 .chk input{width:1.1rem;height:1.1rem}
-button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:.8rem 1rem;background:var(--acc);color:var(--accink);width:100%;cursor:pointer}
+button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:.8rem 1rem;background:var(--acc);color:var(--accink);width:100%;cursor:pointer}
 button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 button:disabled{opacity:.5;cursor:default}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.6rem}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:.75rem}
 .bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--acc) 0 12px,color-mix(in srgb,var(--acc) 65%,#fff) 12px 24px);background-size:34px 34px;animation:stripe .8s linear infinite;transition:width .25s}
