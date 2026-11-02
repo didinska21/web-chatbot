@@ -5,12 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Crypto Farm: Farmer Satoshi</title>
 <link rel="stylesheet" href="style.css">
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hud"><button id="wb">💰 Wallet</button><span id="tk"></span><button id="mu">🔊</button></div>
+<div id="hud">
+  <button id="wb">💰 <span id="wt">$0</span></button>
+  <div id="chips"><span id="chip-time">☀️ 08:00</span><span id="chip-wx">☀️ cerah</span></div>
+  <button id="mu">🔊</button>
+</div>
+<span id="tk"></span>
 <div id="bar"></div>
+<div id="stick"><div id="knob"></div></div>
+<button id="act" class="hide"></button>
 <div id="wp" class="hide"></div>
 <div id="title">
   <h1>🌾 Crypto Farm</h1><h2>Farmer Satoshi</h2>

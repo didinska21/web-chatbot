@@ -3,13 +3,41 @@ html,body{height:100%;overflow:hidden;font:600 14px/1.3 system-ui,sans-serif;col
 canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
 button{font:inherit;border:0;border-radius:14px;padding:8px 12px;background:#fff;box-shadow:0 3px 0 #0002;cursor:pointer}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #2a6df4;outline-offset:2px}
-#hud{position:fixed;top:0;left:0;right:0;display:flex;gap:8px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px}
-#tk{flex:1;min-width:0;background:#fffc;border-radius:14px;padding:8px 12px;font-size:12px}
-#bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:6px;justify-content:center;padding:8px 8px calc(env(safe-area-inset-bottom,0px) + 22px)}
-#bar button{display:flex;flex-direction:column;align-items:center;font-size:22px;line-height:1.1;padding:6px 9px;transition:transform .15s}
-#bar b{font-size:11px}#bar small{font-size:9px;opacity:.7}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;top:0;left:0;right:0;display:flex;gap:8px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px;z-index:5}
+#wb{font-size:15px;padding:8px 14px}
+#chips{display:flex;gap:6px;flex:1;min-width:0;justify-content:center}
+#chips span{background:#fffc;border-radius:12px;padding:6px 10px;font-size:11px;white-space:nowrap;box-shadow:0 2px 0 #0001}
+#mu{width:42px;min-height:42px;font-size:17px;padding:0}
+#tk{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:10px;right:10px;background:#fffc;border-radius:12px;padding:5px 12px;font-size:11px;z-index:4;pointer-events:none;text-align:center;box-shadow:0 2px 0 #0001}
+
+/* ---------- crop bar (di atas zona jempol) ---------- */
+#bar{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 132px);display:flex;gap:6px;justify-content:center;padding:0 8px;z-index:5;flex-wrap:wrap}
+#bar button{display:flex;flex-direction:column;align-items:center;font-size:20px;line-height:1.1;padding:5px 8px;transition:transform .15s;border-radius:12px}
+#bar b{font-size:10px}#bar small{font-size:8px;opacity:.7}
 #bar .on{background:#ffe27a;transform:translateY(-5px)}
-#wp{position:fixed;top:calc(env(safe-area-inset-top,0px) + 56px);right:8px;width:min(350px,calc(100% - 16px));max-height:62vh;overflow:auto;background:#fffe;border-radius:18px;padding:10px;box-shadow:0 8px 24px #0003}
+
+/* ---------- joystick analog (kiri) ---------- */
+#stick{position:fixed;left:22px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:108px;height:108px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.16),rgba(255,255,255,.04));
+  border:2px solid rgba(255,255,255,.4);opacity:.5;transition:opacity .12s;z-index:4;pointer-events:none}
+#stick.on{opacity:1;border-color:#fff}
+#knob{position:absolute;left:50%;top:50%;width:50px;height:50px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#b9d6ff);border:2px solid #2a6df4;
+  transform:translate(-50%,-50%);box-shadow:0 3px 0 #0003;transition:transform .04s}
+#stick.on #knob{transition:none}
+
+/* ---------- tombol aksi kontekstual (kanan) ---------- */
+#act{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);width:86px;height:86px;border-radius:50%;
+  background:#ffcf33;color:#241a00;font-size:24px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;box-shadow:0 4px 0 #0003,0 0 20px rgba(255,207,51,.45);z-index:6;border:0;min-height:0;padding:0;line-height:1.1}
+#act small{font-size:9.5px;font-weight:700;max-width:76px;text-align:center}
+#act:active{transform:scale(.93)}
+
+/* ---------- wallet panel + sparkline ---------- */
+#wp{position:fixed;top:calc(env(safe-area-inset-top,0px) + 92px);right:8px;width:min(350px,calc(100% - 16px));max-height:62vh;overflow:auto;background:#fffe;border-radius:18px;padding:10px;box-shadow:0 8px 24px #0003;z-index:5}
+#spark{width:100%;height:36px;background:#f2f7f2;border-radius:10px;margin-bottom:8px;display:block}
 .hide{display:none}
 .r{display:grid;grid-template-columns:14px 42px 1fr auto auto;gap:6px;align-items:center;padding:3px 0;font-size:12px}
 .r i{width:12px;height:12px;border-radius:50%}.r em{font-style:normal;opacity:.6}
@@ -17,9 +45,30 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #sw{margin-top:8px;padding-top:8px;border-top:2px dashed #0002;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 #sw input,#sw select{font:inherit;padding:6px;border-radius:10px;border:2px solid #0002;max-width:86px}
 #sw small{width:100%;opacity:.6}
-#title{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;background:linear-gradient(#bfe8ff,#d8f5b8)}
-#title h1{font-size:46px}#title h2{font-size:22px;color:#d96f00}#title p{max-width:30ch}
-#go{background:#ffcf33;font-size:18px;padding:12px 26px;margin-top:6px}
+
+/* ---------- title screen "wah" ---------- */
+#title{position:fixed;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;
+  background:linear-gradient(135deg,#bfe8ff,#d8f5b8,#ffe9b8,#bfe8ff);background-size:320% 320%;animation:skyShift 16s ease infinite}
+@keyframes skyShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+#title h1{font-size:52px;letter-spacing:1px;text-shadow:0 3px 0 #fff,0 6px 0 #0001,0 0 28px rgba(255,207,51,.85);animation:titlePop 2.6s ease-in-out infinite}
+@keyframes titlePop{0%,100%{transform:scale(1) rotate(-.5deg)}50%{transform:scale(1.05) rotate(.5deg)}}
+#title h2{font-size:22px;color:#d96f00;text-shadow:0 2px 0 #fff}
+#title p{max-width:32ch;font-size:13px}
+#go{background:#ffcf33;font-size:19px;padding:14px 30px;margin-top:8px;box-shadow:0 4px 0 #0003,0 0 22px rgba(255,207,51,.5);animation:goGlow 1.6s ease-in-out infinite}
+@keyframes goGlow{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 #sim{position:fixed;left:10px;bottom:4px;font-size:10px;opacity:.6;z-index:6}
-.fly{position:fixed;z-index:4;font-weight:800;font-size:16px;pointer-events:none;text-shadow:0 2px 0 #fff;transition:transform .8s cubic-bezier(.5,-.3,.7,1),opacity .8s}
-@media (prefers-reduced-motion:reduce){.fly{transition:none}}
+
+/* ---------- flying text ---------- */
+.fly{position:fixed;z-index:8;font-weight:800;font-size:16px;pointer-events:none;text-shadow:0 2px 0 #fff;transition:transform .8s cubic-bezier(.5,-.3,.7,1),opacity .8s}
+@media (prefers-reduced-motion:reduce){.fly{transition:none}#title h1,#go{animation:none}}
+
+/* ---------- HP kecil ---------- */
+@media (max-width:430px){
+  #bar button{font-size:17px;padding:4px 6px}
+  #bar small{display:none}
+  #stick{width:92px;height:92px;left:14px}
+  #knob{width:44px;height:44px}
+  #act{width:74px;height:74px;right:14px;font-size:20px}
+  #act small{font-size:8.5px;max-width:64px}
+  #chips span{font-size:10px;padding:5px 8px}
+}
