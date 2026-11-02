@@ -1,30 +1,902 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Crypto Farm: Farmer Satoshi</title>
-<link rel="stylesheet" href="style.css">
-<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PANDAWA vs KURAWA — Medan Perang Pasar</title>
+<style>
+/* ============================================================
+   PANDAWA vs KURAWA — Medan Perang Pasar
+   Live-data battlefield game · single file · Three.js local
+   ============================================================ */
+:root{
+  --bg:#0a0805; --panel:#15120c; --panel2:#1e1912; --line:#3a3020;
+  --gold:#d4af37; --green:#3f9b45; --red:#a03028; --cream:#f0e6d2;
+  --txt:#e8e0cc; --dim:#8a7f68; --live:#39ff14; --sim:#ffb02e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:'Courier New',ui-monospace,monospace;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;
+}
+.comic{font-family:'Comic Sans MS','Chalkboard SE',cursive}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:radial-gradient(ellipse at 50% 42%,transparent 50%,rgba(0,0,0,.55))}
+#crt{position:fixed;inset:0;pointer-events:none;z-index:6;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
+.screen{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;
+  padding:14px;overflow-y:auto;background:rgba(6,5,3,.88);backdrop-filter:blur(3px)}
+.screen.on{display:flex}
+button{font-family:inherit;cursor:pointer;border:2px solid var(--line);color:var(--txt);
+  background:var(--panel);border-radius:12px;padding:10px;font-size:14px;min-height:48px;
+  transition:transform .06s}
+button:active{transform:scale(.95)}
+button:disabled{opacity:.35}
+
+/* ─── HUD ─── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:6px;
+  padding:8px 10px;align-items:stretch;pointer-events:none}
+#hud > *{pointer-events:auto}
+#price-box{background:rgba(12,10,6,.85);border:1px solid var(--line);border-radius:10px;
+  padding:5px 10px;min-width:118px}
+#price{font-size:19px;font-weight:800;color:var(--gold);line-height:1.1}
+#price-sub{font-size:9px;color:var(--dim);letter-spacing:1px}
+#mode{display:inline-block;font-size:8px;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:2px}
+#mode.live{background:var(--live);color:#03140a}
+#mode.sim{background:var(--sim);color:#241a00}
+.hud-chip{background:rgba(12,10,6,.85);border:1px solid var(--line);border-radius:10px;
+  padding:5px 9px;font-size:10px;display:flex;flex-direction:column;justify-content:center}
+.hud-chip b{font-size:14px;color:var(--gold)}
+#mute{margin-left:auto;width:38px;min-height:38px;padding:0;font-size:15px;background:rgba(12,10,6,.85)}
+
+/* ─── battle info (tengah atas) ─── */
+#binfo{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:10;width:min(92vw,420px);
+  background:rgba(12,10,6,.85);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:none}
+#binfo.on{display:block}
+#rangebar{position:relative;height:26px;background:#0a0805;border:1px solid var(--line);border-radius:8px;margin:6px 0 4px;overflow:hidden}
+#range-fill{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,rgba(160,48,40,.25),rgba(63,155,69,.25))}
+#range-line{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--gold);box-shadow:0 0 8px var(--gold);left:50%}
+#range-zone{position:absolute;top:0;bottom:0;width:2px}
+#zone-lo{left:0;background:var(--red)} #zone-hi{right:0;background:var(--green)}
+#range-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--dim)}
+#range-labels b{color:var(--cream)}
+#armies{display:flex;gap:8px;margin-top:6px}
+.army{flex:1;font-size:9px}
+.army .bar{height:7px;background:#0a0805;border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:2px}
+.army .bar i{display:block;height:100%;transition:width .3s}
+#army-p i{background:var(--green)} #army-k i{background:var(--red)}
+.army span{color:var(--dim)}
+#betinfo{font-size:10px;text-align:center;color:var(--dim);margin-top:5px}
+#betinfo b{color:var(--gold)}
+
+/* ─── prep panel ─── */
+#prep{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:12;width:min(94vw,440px);
+  background:rgba(14,11,7,.94);border:2px solid var(--gold);border-radius:16px;padding:12px;display:none;
+  box-shadow:0 0 30px rgba(212,175,55,.2)}
+#prep.on{display:block}
+#prep-title{text-align:center;font-size:13px;color:var(--gold);letter-spacing:2px;margin-bottom:8px}
+#prep-count{text-align:center;font-size:22px;font-weight:800;color:var(--cream);margin-bottom:8px}
+#side-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+#side-btns button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px;min-height:58px}
+#side-btns button small{font-size:9px;color:var(--dim)}
+#btn-pandawa{border-color:var(--green);background:linear-gradient(160deg,#12280f,#0a1a08)}
+#btn-pandawa b{color:var(--green);font-size:16px}
+#btn-kurawa{border-color:var(--red);background:linear-gradient(160deg,#2a0e0a,#1a0806)}
+#btn-kurawa b{color:#e06058;font-size:16px}
+#stake-row{display:flex;gap:6px;align-items:center;font-size:10px;color:var(--dim)}
+#stake-row button{flex:1;min-height:38px;font-size:12px}
+#stake-row button.sel{border-color:var(--gold);color:var(--gold);background:#241d0c}
+#prep-hint{font-size:9px;color:var(--dim);text-align:center;margin-top:7px;line-height:1.5}
+
+/* ─── feed dalang ─── */
+#feed{position:fixed;left:8px;bottom:8px;z-index:8;width:min(52vw,250px);pointer-events:none}
+#feed div{font-size:9.5px;color:var(--dim);line-height:1.5;padding:2px 6px;margin-top:2px;
+  background:rgba(10,8,5,.75);border-left:2px solid var(--gold);border-radius:0 6px 6px 0;
+  animation:feedIn .25s}
+#feed div.hot{color:var(--cream);border-left-color:var(--red)}
+@keyframes feedIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1}}
+
+/* ─── flash narasi ─── */
+#flash{position:fixed;top:34%;left:0;right:0;z-index:15;text-align:center;pointer-events:none;display:none}
+#flash.on{display:block;animation:flashIn .3s}
+@keyframes flashIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+#flash-big{font-size:38px;font-weight:800;color:var(--gold);text-shadow:0 0 20px rgba(212,175,55,.5),0 3px 0 #000}
+#flash-sub{font-size:13px;color:var(--cream);margin-top:6px;text-shadow:0 2px 0 #000}
+body.shake #c{animation:shk .45s}
+@keyframes shk{0%,100%{transform:none}20%{transform:translate(-6px,4px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-4px,-3px)}80%{transform:translate(3px,2px)}}
+
+/* ─── title ─── */
+#scr-title{align-items:center;justify-content:center;text-align:center;gap:6px}
+#scr-title .emojis{font-size:44px;letter-spacing:6px}
+#scr-title .big{font-size:46px;line-height:1.05;color:var(--gold);
+  text-shadow:0 0 14px rgba(212,175,55,.5),3px 3px 0 #2a1f08}
+#scr-title .sub{color:var(--green);letter-spacing:3px;font-size:13px}
+#scr-title .story{font-size:11.5px;color:var(--dim);max-width:320px;line-height:1.8;margin:6px 0}
+#scr-title .story b{color:var(--cream)}
+#btn-start{background:linear-gradient(160deg,#d4af37,#a8842a);color:#1a1405;font-weight:800;
+  font-size:18px;padding:13px 36px;box-shadow:0 0 24px rgba(212,175,55,.35)}
+#btn-how{font-size:11px;min-height:36px;color:var(--dim)}
+.hs{font-size:10.5px;color:var(--dim)} .hs b{color:var(--gold)}
+
+/* ─── rapor ─── */
+#scr-over{align-items:center;justify-content:center;text-align:center;gap:9px}
+#over-title{font-size:36px;color:var(--red);text-shadow:0 0 16px rgba(160,48,40,.5)}
+#over-sub{font-size:12px;color:var(--dim);max-width:300px;line-height:1.8}
+#rapor{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px 15px;
+  width:100%;max-width:350px;text-align:left;font-size:11.5px;line-height:1.9}
+#rapor .row{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);gap:8px}
+#rapor .row span:last-child{color:var(--gold);text-align:right}
+#rapor .head{display:block;text-align:center;color:var(--green);border:none;letter-spacing:2px;margin-bottom:3px;font-size:13px}
+#btn-again{background:linear-gradient(160deg,#d4af37,#a8842a);color:#1a1405;font-weight:800;font-size:16px}
+#btn-home{font-size:10px;min-height:34px;color:var(--dim)}
+
+/* ─── how modal ─── */
+#how{position:fixed;inset:0;background:rgba(4,3,1,.95);z-index:40;display:none;
+  align-items:center;justify-content:center;padding:18px}
+#how.on{display:flex}
+#how .box{background:var(--panel);border:2px solid var(--gold);border-radius:16px;padding:18px;
+  max-width:390px;font-size:12px;line-height:1.9}
+#how h3{color:var(--gold);margin-bottom:6px;font-size:16px}
+#how .k{color:var(--green)} #how .r{color:#e06058}
+#how .g{color:var(--gold)}
+
+@media (max-width:430px){
+  #price{font-size:16px} #price-box{min-width:100px}
+  #feed{width:44vw}
+  #flash-big{font-size:30px}
+  #scr-title .big{font-size:36px}
+}
+</style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="vig"></div><div id="crt"></div>
+
+<!-- HUD -->
 <div id="hud">
-  <button id="wb">💰 <span id="wt">$0</span></button>
-  <div id="chips"><span id="chip-time">☀️ 08:00</span><span id="chip-wx">☀️ cerah</span></div>
-  <button id="mu">🔊</button>
+  <div id="price-box">
+    <div><span id="price">$--</span><span id="mode" class="sim">SIM</span></div>
+    <div id="price-sub">BTC/USD · <span id="feed-src">menyiapkan…</span></div>
+  </div>
+  <div class="hud-chip">KOIN<b id="ui-bank">100</b></div>
+  <div class="hud-chip">RONDE<b id="ui-round">1</b></div>
+  <div class="hud-chip">STREAK<b id="ui-streak">0</b></div>
+  <button id="mute">🔊</button>
 </div>
-<span id="tk"></span>
-<div id="bar"></div>
-<div id="stick"><div id="knob"></div></div>
-<button id="act" class="hide"></button>
-<div id="wp" class="hide"></div>
-<div id="title">
-  <h1>🌾 Crypto Farm</h1><h2>Farmer Satoshi</h2>
-  <p id="ld"></p><p id="tut"></p>
-  <button id="go"></button>
+
+<!-- battle info -->
+<div id="binfo">
+  <div id="rangebar">
+    <div id="range-fill"></div>
+    <div id="zone-lo" class="range-zone"></div><div id="zone-hi" class="range-zone"></div>
+    <div id="range-line"></div>
+  </div>
+  <div id="range-labels"><span>KURAWA <b id="lbl-lo">$0</b></span><span id="lbl-mid">—</span><span><b id="lbl-hi">$0</b> PANDAWA</span></div>
+  <div id="armies">
+    <div class="army" id="army-p">PANDAWA · <span id="pow-p">0%</span><div class="bar"><i style="width:50%"></i></div></div>
+    <div class="army" id="army-k" style="text-align:right">KURAWA · <span id="pow-k">0%</span><div class="bar"><i style="width:50%"></i></div></div>
+  </div>
+  <div id="betinfo"></div>
 </div>
-<small id="sim"></small>
-<script type="module" src="js/main.js"></script>
+
+<!-- prep panel -->
+<div id="prep">
+  <div id="prep-title">⚔️ RAPAT PRADEWA — PILIH PASUKANMU</div>
+  <div id="prep-count">5</div>
+  <div id="side-btns">
+    <button id="btn-pandawa">🛡️<b>PANDAWA</b><small>harga TEMBUS atas · menang kalau naik</small></button>
+    <button id="btn-kurawa">🐻<b>KURAWA</b><small>harga TEMBUS bawah · menang kalau turun</small></button>
+  </div>
+  <div id="stake-row">
+    <span style="white-space:nowrap">TARUHAN:</span>
+    <button data-s="10">10%</button>
+    <button data-s="25" class="sel">25%</button>
+    <button data-s="50">50%</button>
+  </div>
+  <div id="prep-hint">Menang = taruhan ×1.9 + bonus streak · Kalah = taruhan hangus · Seri = taruhan kembali<br>Ronde habis kalau harga keluar garis dalam 90 detik. Keyboard: A = Pandawa, D = Kurawa</div>
+</div>
+
+<div id="feed"></div>
+<div id="flash"><div id="flash-big" class="comic"></div><div id="flash-sub"></div></div>
+
+<!-- TITLE -->
+<section id="scr-title" class="screen on">
+  <div class="emojis">🛡️⚔️🐘</div>
+  <div class="big comic">PANDAWA vs KURAWA</div>
+  <div class="sub">MEDAN PERANG PASAR</div>
+  <p class="story">Kamu adalah <b>Dalang Muda</b>. Medan perang bukan di Kurukshetra — tapi <b>order book Bitcoin</b>.<br>
+  <b>Pandawa</b> (pembeli) menekan dari bawah. <b>Kurawa</b> (penjual) mengepung dari atas.<br>
+  Baca medan, pilih pihak, taruh Koin Emas. Likuidasi besar = <b>panah api</b>. $500k+ = <b>gajah perang</b>.</p>
+  <button id="btn-start">⚔️ MULAI BERANG</button>
+  <button id="btn-how">📖 CARA MAIN</button>
+  <div class="hs">REKOR: <b id="title-hs">100</b> koin</div>
+</section>
+
+<!-- GAME OVER -->
+<section id="scr-over" class="screen">
+  <div id="over-title" class="comic">BANGKRUT</div>
+  <div id="over-sub"></div>
+  <div id="rapor"></div>
+  <button id="btn-again">⚔️ DAGANG LAGI</button>
+  <button id="btn-home">🏠 JUDUL</button>
+</section>
+
+<div id="how"><div class="box">
+  <h3>📖 CARA MAIN — 1 menit</h3>
+  1. Tiap ronde, medan membuka <span class="g">garis harga</span> (range). Kamu pilih <span class="k">PANDAWA</span> (harga naik) atau <span class="r">KURAWA</span> (harga turun) + taruhan (10/25/50% koin).<br>
+  2. Perang berlangsung <span class="g">live</span> dari data BTC nyata (order book + likuidasi Binance). Kalau feed mati, medan pindah ke mode <span class="g">SIM</span> otomatis.<br>
+  3. Harga menembus garis atas = <span class="k">PANDAWA menang</span>. Tembus bawah = <span class="r">KURAWA menang</span>. 90 detik tanpa temuus = seri.<br>
+  4. Menang = taruhan <span class="g">×1.9</span> + bonus streak. Kalah = hangus.<br>
+  5. Likuidasi $50k+ = panah api · $150k+ = jet… eh, <span class="g">garuda</span> · $500k+ = <span class="g">gajah perang</span> (layar bergetar).<br>
+  6. Koin &lt; 10 = <span class="r">BANGKRUT</span>. Raih 10.000 = <span class="g">DALANG SEPUH</span>.
+  <br><br><button id="btn-how-close" style="width:100%;background:var(--gold);color:#1a1405;font-weight:800">MENGERTI</button>
+</div></div>
+
+<script type="module">
+import * as THREE from './lib/three.module.js';
+"use strict";
+/* ============================================================
+   0. UTIL
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const rnd = Math.random, ri = (a,b) => a + Math.floor(rnd()*(b-a+1)), pick = a => a[Math.floor(rnd()*a.length)];
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const fmt$ = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmtK = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : String(Math.round(n*10)/10);
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+window.__errors = [];
+addEventListener("error", e => window.__errors.push(String(e.message)));
+
+/* ============================================================
+   1. AUDIO — gamelan pentatonik + kendang (WebAudio)
+   ============================================================ */
+const AudioFX = {
+  ctx:null, muted: store.get("pk_mute")==="1", master:null,
+  ensure(){
+    if(!this.ctx){
+      try{
+        this.ctx = new (window.AudioContext||window.webkitAudioContext)();
+        this.master = this.ctx.createGain(); this.master.gain.value = .5;
+        this.master.connect(this.ctx.destination);
+      }catch(e){}
+    }
+    if(this.ctx && this.ctx.state==="suspended") this.ctx.resume();
+  },
+  // pluck gamelan: pelog-ish pentatonik
+  pluck(f, when=0, v=.12, d=.7){
+    if(this.muted) return; this.ensure(); if(!this.ctx) return;
+    const t = this.ctx.currentTime + when;
+    [1, 2.01, 3.02].forEach((h,i)=>{
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "triangle"; o.frequency.value = f*h;
+      g.gain.setValueAtTime(v/(i+1), t); g.gain.exponentialRampToValueAtTime(.0001, t+d/(i+1));
+      o.connect(g); g.connect(this.master); o.start(t); o.stop(t+d);
+    });
+  },
+  // kendang: ketukan genderang
+  drum(when=0, v=.25, f=62){
+    if(this.muted) return; this.ensure(); if(!this.ctx) return;
+    const t = this.ctx.currentTime + when;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(f*2,t); o.frequency.exponentialRampToValueAtTime(f,t+.09);
+    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+.16);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+.2);
+    const len = 1200, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for(let i=0;i<len;i++) ch[i] = (rnd()*2-1) * (1-i/len);
+    const n = this.ctx.createBufferSource(); n.buffer = buf;
+    const nf = this.ctx.createBiquadFilter(); nf.type="lowpass"; nf.frequency.value=900;
+    const ng = this.ctx.createGain(); ng.gain.setValueAtTime(v*.6,t); ng.gain.exponentialRampToValueAtTime(.0001,t+.1);
+    n.connect(nf); nf.connect(ng); ng.connect(this.master); n.start(t);
+  },
+  gong(when=0){ // gong ageng — kejayaan
+    if(this.muted) return; this.ensure(); if(!this.ctx) return;
+    const t = this.ctx.currentTime + when;
+    [98, 147, 196, 294].forEach((f,i)=>this.pluck(f, when, .16/(i+1), 2.4));
+    this.drum(when, .3, 55);
+  },
+  arrow(){ // panah melesat
+    if(this.muted) return; this.ensure(); if(!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type="triangle"; o.frequency.setValueAtTime(2400,t); o.frequency.exponentialRampToValueAtTime(300,t+.25);
+    g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.25);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+.3);
+  },
+  coin(){ this.pluck(880,0,.1,.3); this.pluck(1174,.06,.1,.3); },
+  err(){ this.pluck(233,0,.12,.5); this.pluck(185,.1,.1,.5); },
+  click(){ this.pluck(660,0,.06,.15); },
+  toggle(){ this.muted=!this.muted; store.set("pk_mute",this.muted?"1":"0"); $("mute").textContent=this.muted?"🔇":"🔊"; if(!this.muted){this.ensure(); this.click();} }
+};
+
+/* ============================================================
+   2. DATA FEED — Binance live WS + SIM fallback
+   ============================================================ */
+const Feed = {
+  mode:"sim", live:false, price:0, book:{bids:[],asks:[]},
+  liqs:[], lastLive:0, ws:[], simT:0, simP:67000, simDrift:0,
+  onLiq:null, onMode:null,
+  init(){
+    // harga awal: coba REST cepat, gagal → sim 67000
+    this.simP = 67000; this.price = 67000;
+    fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+      .then(r=>r.json()).then(d=>{ if(d && d.price){ this.simP = +d.price; this.price = +d.price; } })
+      .catch(()=>{});
+    this.connectLive();
+    setInterval(()=>this.watchdog(), 1000);
+  },
+  connectLive(){
+    try{
+      const mk = (url, onMsg) => {
+        const w = new WebSocket(url);
+        w.onmessage = e => { try{ onMsg(JSON.parse(e.data)); }catch(err){} this.lastLive = Date.now();
+          if(!this.live){ this.live = true; this.mode = "live"; if(this.onMode) this.onMode("live"); } };
+        w.onerror = () => {};
+        w.onclose = () => { if(this.live){ this.live=false; this.mode="sim"; if(this.onMode) this.onMode("sim"); } };
+        this.ws.push(w); return w;
+      };
+      mk("wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms", d=>{
+        this.book.bids = d.bids.map(x=>[+x[0],+x[1]]);
+        this.book.asks = d.asks.map(x=>[+x[0],+x[1]]);
+      });
+      mk("wss://stream.binance.com:9443/ws/btcusdt@aggTrade", d=>{ this.price = +d.p; });
+      mk("wss://fstream.binance.com/ws/!forceOrder", d=>{
+        const o = d.o; if(!o) return;
+        const usd = (+o.q) * (+o.p);
+        this.liqs.push({ side:o.S, usd, price:+o.p, ts:Date.now() });
+        if(this.onLiq) this.onLiq({ side:o.S, usd, price:+o.p });
+      });
+    }catch(e){ this.mode="sim"; }
+  },
+  watchdog(){
+    if(this.live && Date.now()-this.lastLive > 6000){
+      this.live=false; this.mode="sim"; if(this.onMode) this.onMode("sim");
+    }
+    if(!this.live){
+      // coba reconnect tiap 20s
+      if(!this._rc || Date.now()-this._rc > 20000){ this._rc = Date.now(); this.ws.forEach(w=>{try{w.close()}catch(e){}}); this.ws=[]; this.connectLive(); }
+    }
+  },
+  step(dt){ // dipanggil tiap frame — jalankan SIM kalau tidak live
+    if(this.live) return;
+    this.simT += dt;
+    if(rnd() < dt*0.08) this.simDrift = (rnd()-0.5)*0.0011;
+    this.simP += this.simP * (this.simDrift + (rnd()-0.5)*0.00035) * dt * 8;
+    this.price = this.simP;
+    // buku sintetis
+    if(!this._bt || Date.now()-this._bt > 120){
+      this._bt = Date.now();
+      const p = this.simP, bids=[], asks=[];
+      let q = p;
+      for(let i=0;i<20;i++){ q -= p*(0.0002+rnd()*0.0006); bids.push([q, rnd()*8+0.5]); }
+      q = p;
+      for(let i=0;i<20;i++){ q += p*(0.0002+rnd()*0.0006); asks.push([q, rnd()*8+0.5]); }
+      // wall acak
+      if(rnd()<.3) bids[ri(0,6)][1] *= ri(3,9);
+      if(rnd()<.3) asks[ri(0,6)][1] *= ri(3,9);
+      this.book.bids = bids; this.book.asks = asks;
+    }
+    // likuidasi sintetis
+    if(rnd() < dt*0.22){
+      const up = rnd() < .5;
+      const tier = rnd();
+      const usd = tier<.7 ? ri(8,45)*1000 : tier<.93 ? ri(50,140)*1000 : ri(150,800)*1000;
+      const ev = { side: up?"BUY":"SELL", usd, price: this.simP*(1+(up?1:-1)*rnd()*0.0008), ts:Date.now() };
+      this.liqs.push(ev);
+      if(this.onLiq) this.onLiq(ev);
+    }
+  },
+  depthBetween(lo, hi, side){ // total qty dalam rentang harga
+    const arr = side==="bid" ? this.book.bids : this.book.asks;
+    let s = 0;
+    for(const [p,q] of arr){ if(p>=lo && p<=hi) s += q; }
+    return s;
+  }
+};
+
+/* ============================================================
+   3. SCENE 3D — medan perang
+   ============================================================ */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0805);
+scene.fog = new THREE.Fog(0x0a0805, 18, 42);
+
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, .1, 100);
+const renderer = new THREE.WebGLRenderer({canvas:$("c"), antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = false;
+
+// cahaya: senja kepung
+scene.add(new THREE.AmbientLight(0x6a5a40, 1.1));
+const sun = new THREE.DirectionalLight(0xffd9a0, 1.6);
+sun.position.set(6, 12, 4); scene.add(sun);
+const glowP = new THREE.PointLight(0x3f9b45, .6, 14); scene.add(glowP);
+const glowK = new THREE.PointLight(0xa03028, .6, 14); scene.add(glowK);
+
+// medan: tanah panjang
+const WORLD_HALF = 11; // x = ±11
+const terrain = new THREE.Mesh(
+  new THREE.PlaneGeometry(WORLD_HALF*2+4, 14),
+  new THREE.MeshStandardMaterial({color:0x2a2418, roughness:1})
+);
+terrain.rotation.x = -Math.PI/2; terrain.position.z = 1; scene.add(terrain);
+// garis-garis harga di tanah
+const gridMat = new THREE.LineBasicMaterial({color:0x4a4030, transparent:true, opacity:.5});
+for(let i=-10;i<=10;i+=1){
+  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i,0.02,-4), new THREE.Vector3(i,0.02,6)]);
+  scene.add(new THREE.Line(g, gridMat));
+}
+// jalan depan (garis pertempuran)
+const front = new THREE.Mesh(new THREE.PlaneGeometry(WORLD_HALF*2+4, .12),
+  new THREE.MeshBasicMaterial({color:0xd4af37, transparent:true, opacity:.35}));
+front.rotation.x = -Math.PI/2; front.position.set(0,.03,0); scene.add(front);
+
+// ── candi (basis) ──
+function makeCandi(x, color){
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({color, roughness:.9});
+  const parts = [[3.2,.5,3.2,0],[2.6,.5,2.6,.5],[2.0,.5,2.0,1.0],[1.4,.5,1.4,1.5],[.8,.6,.8,2.0]];
+  parts.forEach(([w,h,d,y])=>{
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+    m.position.set(x, y+h/2, -4.6); g.add(m);
+  });
+  // gapura
+  const gate = new THREE.Mesh(new THREE.BoxGeometry(1.1,1.6,.4), mat);
+  gate.position.set(x, .8, -3.0); g.add(gate);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.6,.5),
+    new THREE.MeshBasicMaterial({color, transparent:true, opacity:.5}));
+  glow.position.set(x, 2.9, -4.55); g.add(glow);
+  scene.add(g); return g;
+}
+const candiP = makeCandi(-WORLD_HALF-1.2, 0x3f9b45);
+const candiK = makeCandi(WORLD_HALF+1.2, 0xa03028);
+
+// ── label harga (sprite) ──
+function makeLabel(text, color="#d4af37"){
+  const cv = document.createElement("canvas"); cv.width=256; cv.height=64;
+  const cx = cv.getContext("2d");
+  cx.font = "bold 30px monospace"; cx.textAlign="center"; cx.textBaseline="middle";
+  cx.fillStyle = color; cx.fillText(text, 128, 34);
+  const tex = new THREE.CanvasTexture(cv);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
+  sp.scale.set(2.2,.55,1); return sp;
+}
+const markerGroup = new THREE.Group(); scene.add(markerGroup);
+const lineLabel = makeLabel("$0", "#f0e6d2"); lineLabel.scale.set(2.6,.7,1); lineLabel.position.y = 2.6; scene.add(lineLabel);
+
+// ── pasukan: instanced ──
+const CAP = {inf:110, arc:36, ele:7};
+const bodyGeo = new THREE.CapsuleGeometry(.16,.42,3,6);
+const headGeo = new THREE.SphereGeometry(.13,6,5);
+const weapGeo = new THREE.BoxGeometry(.05,.7,.05);
+const mBody = new THREE.InstancedMesh(bodyGeo, new THREE.MeshStandardMaterial({roughness:.8}), CAP.inf*2+CAP.arc*2+CAP.ele*2);
+const mHead = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMaterial({roughness:.8}), mBody.count);
+const mWeap = new THREE.InstancedMesh(weapGeo, new THREE.MeshStandardMaterial({roughness:.6}), mBody.count);
+[mBody,mHead,mWeap].forEach(m=>{ m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); });
+const dummy = new THREE.Object3D();
+const col = new THREE.Color();
+
+// data unit (stabil per index) — rank dihitung sekali di awal
+const units = [];
+for(let t=0;t<2;t++){
+  const cnt = {inf:0, arc:0, ele:0};
+  for(let k=0;k<CAP.inf;k++) units.push({t,type:"inf",rank:cnt.inf++,ox:rnd(),oz:rnd(),ph:rnd()*6.28});
+  for(let k=0;k<CAP.arc;k++) units.push({t,type:"arc",rank:cnt.arc++,ox:rnd(),oz:rnd(),ph:rnd()*6.28});
+  for(let k=0;k<CAP.ele;k++) units.push({t,type:"ele",rank:cnt.ele++,ox:rnd(),oz:rnd(),ph:rnd()*6.28});
+}
+
+// ── panah & partikel ──
+const arrowGeo = new THREE.CylinderGeometry(.012,.012,.9,4);
+arrowGeo.rotateX(Math.PI/2);
+const arrows = [];
+for(let i=0;i<50;i++){
+  const m = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({color:0xd4af37, transparent:true}));
+  m.visible=false; scene.add(m); arrows.push({m, life:0});
+}
+const parts = [];
+const partGeo = new THREE.BoxGeometry(.07,.07,.07);
+for(let i=0;i<160;i++){
+  const m = new THREE.Mesh(partGeo, new THREE.MeshBasicMaterial({color:0xff8830, transparent:true}));
+  m.visible=false; scene.add(m); parts.push({m, vx:0,vy:0,vz:0, life:0});
+}
+function burst(x,z,n,color){
+  let c=0;
+  for(const p of parts){ if(p.life<=0 && c<n){ c++;
+    p.m.position.set(x, .6+rnd()*.5, z); p.m.material.color.set(color); p.m.visible=true;
+    p.vx=(rnd()-.5)*5; p.vy=2+rnd()*4; p.vz=(rnd()-.5)*5; p.life=.7+rnd()*.5; } }
+}
+function fireArrows(fromX, toX, z, n){
+  let c=0;
+  for(const a of arrows){ if(a.life<=0 && c<n){ c++;
+    a.m.position.set(fromX, .8+rnd()*.5, z+(rnd()-.5)*2); a.m.visible=true;
+    a.life = .5; a.vx = (toX-fromX)/.5; a.toX = toX; a.z = z+(rnd()-.5)*1.5; } }
+  AudioFX.arrow();
+}
+
+// ── kamera ──
+let camShake = 0;
+function camUpdate(dt){
+  const lx = priceToX(Feed.price);
+  const tx = clamp(lx*0.55, -4, 4);
+  camera.position.x += (tx - camera.position.x)*Math.min(1,dt*3);
+  camera.position.y = 8.2; camera.position.z = 11.5;
+  camShake = Math.max(0, camShake - dt*2.2);
+  camera.position.x += (rnd()-.5)*camShake*.8;
+  camera.position.y += (rnd()-.5)*camShake*.5;
+  camera.lookAt(camera.position.x, .6, 0);
+}
+
+/* ============================================================
+   4. BATTLE STATE
+   ============================================================ */
+const G = {
+  phase:"title", round:1, bank:100, streak:0, bestBank:100,
+  side:null, stakePct:25, stake:0,
+  lo:0, hi:0, c:0, R:300,
+  tBattle:0, prepT:0, resolveT:0,
+  stats:{win:0,lose:0,draw:0,liqs:0,bigLiq:0,bestWin:0},
+  hs: parseInt(store.get("pk_hs")||"0",10) || 100,
+};
+let priceToX = p => 0;
+
+function newRange(){
+  G.c = Feed.price; G.R = 300;
+  G.lo = G.c - G.R; G.hi = G.c + G.R;
+}
+function startRound(){
+  newRange();
+  G.phase = "prep"; G.prepT = 5; G.side = null;
+  $("prep").classList.add("on"); $("binfo").classList.add("on");
+  $("betinfo").innerHTML = "Taruhan: <b>" + G.stakePct + "%</b> = " + fmtK(G.bank*G.stakePct/100) + " koin";
+  say("Ronde " + G.round + ": medan membentang $" + G.R + " di sekitar " + fmt$(G.c) + ".");
+  setHud();
+}
+function beginBattle(){
+  G.phase = "battle"; G.tBattle = 0;
+  $("prep").classList.remove("on");
+  const nama = G.side==="pandawa" ? "PANDAWA" : "KURAWA";
+  flash(G.side==="pandawa" ? "🛡️ UNTUK PANDAWA!" : "🐻 UNTUK KURAWA!", "Kamu membimbing " + nama + ". Taruhan " + fmtK(G.stake) + " koin.");
+  say("Dalang menabuh kendang. " + nama + " maju!");
+  AudioFX.gong(); AudioFX.drum(0,.3);
+}
+function endRound(winner){
+  G.phase = "resolve"; G.resolveT = 3.2;
+  let delta = 0, txt = "";
+  if(winner === "draw"){
+    G.stats.draw++;
+    flash("🤝 GENCAAN SENJATA", "Harga enggan memihak. Taruhan kembali.");
+    say("Perang berakhir tanpa pemenang. Kembali ke padepokan.");
+    AudioFX.pluck(392,0,.12,.8);
+  } else if(winner === G.side){
+    const mult = 1 + Math.min(G.streak,5)*.1;
+    delta = G.stake * .9 * mult;
+    G.bank += delta; G.streak++; G.stats.win++;
+    G.stats.bestWin = Math.max(G.stats.bestWin, delta);
+    flash("🏆 " + (winner==="pandawa"?"PANDAWA MENANG!":"KURAWA MENANG!"),
+      "+" + fmtK(delta) + " koin (×1.9" + (mult>1? " + streak ×"+mult.toFixed(1):"") + ")");
+    say(winner==="pandawa" ? "Barisan Kurawa mundur! Garis harga tembus!" : "Pandawa terdesak! Garis harga jebol!");
+    AudioFX.gong(); AudioFX.coin();
+    burst(0, 0, 20, 0xd4af37);
+  } else {
+    delta = -G.stake; G.bank += delta; G.streak = 0; G.stats.lose++;
+    flash("💀 " + (G.side==="pandawa"?"PANDAWA KALAH":"KURAWA KALAH"),
+      "-" + fmtK(G.stake) + " koin. " + pick(["Lawan menembus garis.","Pasukanmu terpencar.","Dalang salah baca medan."]));
+    say("Pasukanmu kocar-kacir. Koin emas berpindah tangan.");
+    AudioFX.err(); AudioFX.drum(0,.2,50);
+  }
+  G.bestBank = Math.max(G.bestBank, G.bank);
+  setHud();
+  setTimeout(()=>{
+    if(G.bank < 10) return gameOver();
+    G.round++; startRound();
+  }, 3200);
+}
+function gameOver(){
+  G.phase = "over";
+  $("prep").classList.remove("on"); $("binfo").classList.remove("on");
+  const isRec = G.bestBank > G.hs;
+  if(isRec){ G.hs = Math.floor(G.bestBank); store.set("pk_hs", String(G.hs)); }
+  const rank = G.bestBank >= 10000 ? "DALANG SEPUH 👑" : G.bestBank >= 2000 ? "SENAPATI 🎖️" :
+               G.bestBank >= 500 ? "KSATRIA ⚔️" : G.bestBank >= 100 ? "PEDAGANG 🪙" : "WARGA PASAR 🧺";
+  $("over-title").textContent = "BANGKRUT";
+  $("over-sub").textContent = pick([
+    "Koin terakhir habis buat gas… eh, buat kemenyan.",
+    "Bangkrut bukan akhir. Cuma jeda sebelum rugi lagi.",
+    "Medan perang mengunci pintunya. Koinmu jadi kenangan.",
+  ]) + " Pangkat akhir: " + rank;
+  const s = G.stats;
+  $("rapor").innerHTML = `<span class="head">📜 LAPORAN DALANG</span>` +
+    row("Pangkat", rank) + row("Ronde bertahan", G.round) +
+    row("Menang / Kalah / Seri", s.win + " / " + s.lose + " / " + s.draw) +
+    row("Koin puncak", fmtK(G.bestBank)) +
+    row("Menang terbaik", "+" + fmtK(s.bestWin)) +
+    row("Likuidasi disaksikan", s.liqs + (s.bigLiq? " ("+s.bigLiq+" besar)":"")) +
+    row("Rekor", fmtK(G.hs) + (isRec ? ' <span style="color:var(--gold)">★ BARU</span>' : ""));
+  $("scr-over").classList.add("on");
+  AudioFX.err();
+  function row(k,v){ return `<div class="row"><span>${k}</span><span>${v}</span></div>`; }
+}
+
+/* ============================================================
+   5. UI
+   ============================================================ */
+function setHud(){
+  $("ui-bank").textContent = fmtK(G.bank);
+  $("ui-round").textContent = G.round;
+  $("ui-streak").textContent = G.streak;
+  $("title-hs").textContent = fmtK(G.hs);
+}
+function say(t){
+  const f = $("feed"); const d = document.createElement("div");
+  d.textContent = "🎭 " + t; f.prepend(d);
+  while(f.children.length > 7) f.lastChild.remove();
+}
+function flash(big, sub){
+  $("flash-big").textContent = big; $("flash-sub").textContent = sub || "";
+  $("flash").classList.add("on");
+  clearTimeout(flash._t); flash._t = setTimeout(()=>$("flash").classList.remove("on"), 2200);
+}
+Feed.onMode = m => {
+  const el = $("mode");
+  el.textContent = m === "live" ? "LIVE" : "SIM";
+  el.className = m;
+  $("feed-src").textContent = m === "live" ? "Binance spot" : "medan simulasi";
+  say(m === "live" ? "Aliran data nyata tersambung — Binance." : "Feed terputus — medan beralih ke simulasi.");
+};
+Feed.onLiq = ev => {
+  G.stats.liqs++;
+  const side = ev.side === "SELL" ? "pandawa" : "kurawa"; // SELL = long likuidasi → Pandawa kena
+  const lx = priceToX(ev.price);
+  if(ev.usd >= 500000){
+    G.stats.bigLiq++;
+    camShake = 1.1;
+    flash("🐘 GAJAH PERANG!", (side==="pandawa"?"Kurawa":"Pandawa") + " melepas gajah — likuidasi $" + fmtK(ev.usd/1000) + "k");
+    say("Gajah perang " + (side==="pandawa"?"Kurawa":"Pandawa") + " menyerbu! Tanah bergetar ($" + fmtK(ev.usd/1000) + "k).");
+    AudioFX.drum(0,.4,48); burst(lx, side==="pandawa"?1.5:-1.5, 24, 0xc8a050);
+    fireArrows(side==="pandawa"? lx+4 : lx-4, lx, side==="pandawa"?1:-1, 10);
+  } else if(ev.usd >= 150000){
+    camShake = .6;
+    say("Panah api " + (side==="pandawa"?"Kurawa":"Pandawa") + " menghantam barisan ($" + fmtK(ev.usd/1000) + "k).");
+    fireArrows(side==="pandawa"? lx+4 : lx-4, lx, side==="pandawa"?1:-1, 6);
+    AudioFX.drum(0,.2,60);
+  } else if(ev.usd >= 50000){
+    say("Likuidasi $" + fmtK(ev.usd/1000) + "k mengenai " + (side==="pandawa"?"Pandawa":"Kurawa") + ".");
+    fireArrows(side==="pandawa"? lx+4 : lx-4, lx, side==="pandawa"?1:-1, 3);
+  }
+  // knockback visual: unit pihak kena mundur sesaat
+  hitFlash[side] = 1;
+};
+const hitFlash = {pandawa:0, kurawa:0};
+
+// ── input ──
+$("btn-pandawa").onclick = ()=>chooseSide("pandawa");
+$("btn-kurawa").onclick = ()=>chooseSide("kurawa");
+function chooseSide(s){
+  if(G.phase !== "prep" || G.side) return;
+  G.side = s; G.stake = G.bank * G.stakePct / 100;
+  AudioFX.click();
+  $("btn-pandawa").style.opacity = s==="pandawa" ? 1 : .4;
+  $("btn-kurawa").style.opacity = s==="kurawa" ? 1 : .4;
+  $("betinfo").innerHTML = "Pilihan: <b>" + (s==="pandawa"?"PANDAWA 🛡️":"KURAWA 🐻") + "</b> · taruhan <b>" + fmtK(G.stake) + "</b> koin";
+  say(s==="pandawa" ? "Kamu memihak Pandawa. Semoga harga mau naik." : "Kamu memihak Kurawa. Semoga pasar mau jatuh.");
+}
+document.querySelectorAll("#stake-row button").forEach(b=>{
+  b.onclick = ()=>{
+    if(G.phase !== "prep") return;
+    G.stakePct = +b.dataset.s;
+    document.querySelectorAll("#stake-row button").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel"); AudioFX.click();
+    if(G.side){ G.stake = G.bank * G.stakePct / 100;
+      $("betinfo").innerHTML = "Pilihan: <b>" + (G.side==="pandawa"?"PANDAWA 🛡️":"KURAWA 🐻") + "</b> · taruhan <b>" + fmtK(G.stake) + "</b> koin"; }
+    else $("betinfo").innerHTML = "Taruhan: <b>" + G.stakePct + "%</b> = " + fmtK(G.bank*G.stakePct/100) + " koin";
+  };
+});
+$("btn-start").onclick = startGame;
+$("btn-again").onclick = startGame;
+$("btn-home").onclick = ()=>{ $("scr-over").classList.remove("on"); $("scr-title").classList.add("on"); };
+$("btn-how").onclick = ()=>$("how").classList.add("on");
+$("btn-how-close").onclick = ()=>$("how").classList.remove("on");
+$("mute").onclick = ()=>AudioFX.toggle();
+addEventListener("keydown", e=>{
+  if(G.phase === "prep"){
+    if(e.key==="a"||e.key==="A") chooseSide("pandawa");
+    if(e.key==="d"||e.key==="D") chooseSide("kurawa");
+  }
+  if((e.key==="Enter"||e.key===" ") && (G.phase==="title"||G.phase==="over")) startGame();
+});
+
+function startGame(){
+  AudioFX.ensure(); AudioFX.click();
+  G.bank = 100; G.round = 1; G.streak = 0; G.bestBank = 100;
+  G.stats = {win:0,lose:0,draw:0,liqs:0,bigLiq:0,bestWin:0};
+  $("scr-title").classList.remove("on"); $("scr-over").classList.remove("on");
+  startRound();
+}
+
+/* ============================================================
+   6. RENDER LOOP
+   ============================================================ */
+const clock = new THREE.Clock();
+function frame(){
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), .05);
+  Feed.step(dt);
+  camUpdate(dt);
+
+  // range mapping
+  priceToX = p => clamp((p - G.c) / G.R * 10, -WORLD_HALF-1, WORLD_HALF+1);
+  const lx = priceToX(Feed.price);
+
+  // ── HUD harga ──
+  $("price").textContent = fmt$(Feed.price);
+
+  // ── battle info bar ──
+  if(G.phase === "battle" || G.phase === "resolve"){
+    const pct = clamp((Feed.price - G.lo)/(G.hi - G.lo), 0, 1);
+    $("range-line").style.left = (pct*100) + "%";
+    $("range-fill").style.width = (pct*100) + "%";
+    $("lbl-lo").textContent = fmt$(G.lo);
+    $("lbl-hi").textContent = fmt$(G.hi);
+    $("lbl-mid").textContent = fmt$(Feed.price);
+    const bd = Feed.depthBetween(G.lo, Feed.price, "bid");
+    const ad = Feed.depthBetween(Feed.price, G.hi, "ask");
+    const tot = bd + ad || 1;
+    $("pow-p").textContent = Math.round(bd/tot*100) + "%";
+    $("pow-k").textContent = Math.round(ad/tot*100) + "%";
+    $("army-p").querySelector("i").style.width = (bd/tot*100) + "%";
+    $("army-k").querySelector("i").style.width = (ad/tot*100) + "%";
+  }
+
+  // ── garis depan 3D ──
+  front.position.x = lx;
+  lineLabel.position.x = lx;
+  // update label harga tiap 10 frame (hemat)
+  if(!frame._n) frame._n = 0;
+  if(frame._n++ % 10 === 0){
+    if(lineLabel.material.map) lineLabel.material.map.dispose();
+    const c2 = document.createElement("canvas"); c2.width=256; c2.height=64;
+    const x2 = c2.getContext("2d"); x2.font="bold 30px monospace"; x2.textAlign="center"; x2.textBaseline="middle";
+    x2.fillStyle = "#f0e6d2"; x2.fillText(fmt$(Feed.price), 128, 34);
+    lineLabel.material.map = new THREE.CanvasTexture(c2);
+    lineLabel.material.needsUpdate = true;
+  }
+  glowP.position.set(lx-2, 2, 0); glowK.position.set(lx+2, 2, 0);
+
+  // ── marker harga di tanah ──
+  if(!frame._mk || frame._n % 30 === 0){
+    // buang sprite lama + dispose teksturnya (cegah leak)
+    for(const sp of markerGroup.children){ if(sp.material.map) sp.material.map.dispose(); sp.material.dispose(); }
+    markerGroup.clear();
+    const step = 100;
+    for(let p = Math.ceil(G.lo/step)*step; p <= G.hi; p += step){
+      const sp = makeLabel("$" + p, "#8a7f68");
+      sp.position.set(priceToX(p), .1, 5.2); sp.scale.set(1.5,.4,1);
+      markerGroup.add(sp);
+    }
+  }
+
+  // ── layout pasukan ──
+  const bd = Feed.depthBetween(G.lo, Feed.price, "bid");
+  const ad = Feed.depthBetween(Feed.price, G.hi, "ask");
+  const powP = bd/(bd+ad||1), powK = 1-powP;
+  hitFlash.pandawa = Math.max(0, hitFlash.pandawa - dt*1.5);
+  hitFlash.kurawa = Math.max(0, hitFlash.kurawa - dt*1.5);
+  const t = performance.now()/1000;
+  let idx = 0;
+  const nInf = [Math.round(CAP.inf*(0.25+powP*0.75)), Math.round(CAP.inf*(0.25+powK*0.75))];
+  const nArc = [Math.round(CAP.arc*(0.25+powP*0.75)), Math.round(CAP.arc*(0.25+powK*0.75))];
+  const nEle = [Math.round(CAP.ele*(0.2+powP*0.8)), Math.round(CAP.ele*(0.2+powK*0.8))];
+  for(const u of units){
+    const team = u.t; // 0=pandawa(kiri), 1=kurawa(kanan)
+    const cap = u.type==="inf" ? nInf[team] : u.type==="arc" ? nArc[team] : nEle[team];
+    if(u.rank >= cap){ // sembunyikan: scale 0
+      dummy.position.set(0,-99,0); dummy.scale.setScalar(0.001); dummy.rotation.set(0,0,0);
+      dummy.updateMatrix();
+      mBody.setMatrixAt(idx, dummy.matrix); mHead.setMatrixAt(idx, dummy.matrix); mWeap.setMatrixAt(idx, dummy.matrix);
+      idx++; continue;
+    }
+    const dir = team===0 ? -1 : 1;
+    const flash = hitFlash[team===0?"pandawa":"kurawa"];
+    const depth = u.type==="inf" ? .5 + u.ox*2.2 : u.type==="arc" ? 3.0 + u.ox*1.2 : 4.2 + u.ox*1.4;
+    const x = lx + dir*(depth + flash*1.6);
+    const z = (u.oz - .5)*5.5 + (u.type==="ele" ? (u.oz-.5)*1.5 : 0);
+    const bob = Math.sin(t*2.4 + u.ph)*.04;
+    const s = u.type==="ele" ? 2.6 : u.type==="arc" ? .82 : 1;
+    dummy.position.set(x, (u.type==="ele"?.55:.36)*s + bob, z);
+    dummy.scale.setScalar(s);
+    dummy.rotation.set(0, team===0 ? Math.PI/2 : -Math.PI/2, 0);
+    dummy.updateMatrix();
+    mBody.setMatrixAt(idx, dummy.matrix);
+    dummy.position.y += .30*s; dummy.updateMatrix();
+    mHead.setMatrixAt(idx, dummy.matrix);
+    dummy.position.y -= .30*s;
+    // senjata di tangan
+    dummy.position.set(x + (team===0?.2:-.2), .55*s+bob, z + .12);
+    dummy.rotation.set(0,0, team===0 ? .5 : -.5);
+    dummy.updateMatrix();
+    mWeap.setMatrixAt(idx, dummy.matrix);
+    // warna
+    if(u.type==="ele"){ col.setHex(team===0?0x7a5c2e:0x6e4a3a); }
+    else if(u.type==="arc"){ col.setHex(team===0?0x6ab84f:0xc4503f); }
+    else { col.setHex(team===0?0x3f9b45:0xa03028); }
+    mBody.setColorAt(idx, col);
+    col.setHex(team===0?0xf0d8a8:0xe8c8a0);
+    mHead.setColorAt(idx, col);
+    col.setHex(u.type==="ele"?0xe8e0c8:0xd4af37);
+    mWeap.setColorAt(idx, col);
+    idx++;
+  }
+  mBody.count = idx; mHead.count = idx; mWeap.count = idx;
+  mBody.instanceMatrix.needsUpdate = true; mHead.instanceMatrix.needsUpdate = true; mWeap.instanceMatrix.needsUpdate = true;
+  if(mBody.instanceColor) mBody.instanceColor.needsUpdate = true;
+  if(mHead.instanceColor) mHead.instanceColor.needsUpdate = true;
+  if(mWeap.instanceColor) mWeap.instanceColor.needsUpdate = true;
+
+  // ── panah ──
+  for(const a of arrows){
+    if(a.life > 0){
+      a.life -= dt;
+      a.m.position.x += a.vx*dt;
+      a.m.position.y -= dt*.6;
+      a.m.lookAt(a.toX, .3, a.z);
+      if(a.life <= 0){ a.m.visible=false; burst(a.m.position.x, a.m.position.z, 2, 0xd4af37); }
+    }
+  }
+  // ── partikel ──
+  for(const p of parts){
+    if(p.life > 0){
+      p.life -= dt;
+      p.m.position.x += p.vx*dt; p.m.position.y += p.vy*dt; p.m.position.z += p.vz*dt;
+      p.vy -= 9*dt;
+      p.m.material.opacity = clamp(p.life, 0, 1);
+      if(p.life <= 0) p.m.visible = false;
+    }
+  }
+
+  // ── state machine ──
+  if(G.phase === "prep"){
+    G.prepT -= dt;
+    $("prep-count").textContent = Math.ceil(Math.max(0,G.prepT));
+    if(G.prepT <= 0){
+      if(!G.side){ G.side = pick(["pandawa","kurawa"]); G.stake = G.bank*G.stakePct/100;
+        say("Kamu bengong — Dalang memihakkan " + G.side.toUpperCase() + " sembarangan."); }
+      beginBattle();
+    }
+  } else if(G.phase === "battle"){
+    G.tBattle += dt;
+    if(Feed.price >= G.hi) endRound("pandawa");
+    else if(Feed.price <= G.lo) endRound("kurawa");
+    else if(G.tBattle > 90) endRound("draw");
+  }
+
+  renderer.render(scene, camera);
+}
+
+// resize
+addEventListener("resize", ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// boot
+Feed.init();
+setHud();
+frame();
+
+// expose buat testing
+window.__PK = {G, Feed, AudioFX, startGame, chooseSide, endRound, priceToX: p=>priceToX(p),
+  renderer, scene, camera,
+  troopCounts: () => ({body: mBody.count, visible: [...Array(mBody.count).keys()].filter(i => {
+    const m = new THREE.Matrix4(); mBody.getMatrixAt(i, m);
+    return m.elements[13] > -50; // y position > -50 = visible
+  }).length})};
+</script>
 </body>
 </html>
