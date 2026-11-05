@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SQUEEK STACK: Build the Block — a Squeekchain fan game</title>
+<meta name="description" content="Fan-made falling-block stacking game whose speed follows Squeektoshi the hamster's real wheel, live from the Squeekchain Sepolia testnet public API.">
+<!-- SQUEEKCHAIN-VERIFY:PAGE-TAG -->
+<style>
+  :root{
+    --bg:#0b0f1a; --panel:#151c30; --panel2:#1b2440; --line:#2a3557;
+    --text:#e7ebf5; --muted:#93a0bd; --accent:#f5a623; --accent2:#ff7847;
+    --good:#4ade80; --bad:#f87171;
+  }
+  body[data-mode="nap"]{
+    --bg:#060b1d; --panel:#0d1730; --panel2:#12203f; --line:#1e3260;
+    --accent:#5b8cff; --accent2:#7dd3fc;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #1a2440 0%, var(--bg) 55%) , var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    transition:background .6s ease;
+    min-height:100vh;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:14px 12px 30px;}
+  header{text-align:center; margin:4px 0 10px;}
+  h1{
+    margin:0; font-size:clamp(26px, 6vw, 40px); letter-spacing:1px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{color:var(--muted); font-size:14px; margin-top:2px;}
+  .hud{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(104px, 1fr));
+    gap:8px; margin:10px 0;
+  }
+  .hud .cell{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:7px 9px; min-height:52px;
+  }
+  .hud .k{display:block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .hud .v{display:block; font-size:16px; font-weight:700; font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin-top:2px; word-break:break-word;}
+  .hud .v.small{font-size:12.5px; line-height:1.35;}
+  #apiNote{
+    display:none; text-align:center; font-size:13px; color:#ffd166;
+    background:#2a2103; border:1px solid #6b5510; border-radius:8px; padding:6px 8px; margin:6px 0;
+  }
+  body[data-mode="nap"] #apiNote{background:#0b1e3a; border-color:#274b7a; color:#9ec5ff;}
+  .realblock{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 12px; margin:8px 0 4px;}
+  .realblock .lbl{display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:6px; gap:8px; flex-wrap:wrap;}
+  .realblock .lbl b{color:var(--text);}
+  .bar{height:16px; background:#0a0f22; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .bar > div{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    transition:width 1s ease;
+  }
+  #banner{
+    display:none; text-align:center; font-weight:800; font-size:clamp(15px,4vw,20px);
+    background:linear-gradient(90deg, #14532d, #166534); color:#bbf7d0;
+    border:1px solid var(--good); border-radius:10px; padding:10px; margin:10px 0 2px;
+    animation:pop .35s ease;
+  }
+  #banner.show{display:block;}
+  @keyframes pop{from{transform:scale(.92); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .game-area{display:flex; gap:14px; justify-content:center; align-items:flex-start; flex-wrap:wrap; margin-top:10px;}
+  canvas#board{
+    background:#080d1c; border:2px solid var(--accent); border-radius:10px;
+    width:min(76vw, 300px); height:auto; touch-action:none;
+    box-shadow:0 10px 34px rgba(0,0,0,.5);
+  }
+  .side{width:228px; max-width:92vw; display:flex; flex-direction:column; gap:10px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+  .card h3{margin:0 0 6px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .stats{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; text-align:center;}
+  .stats .n{font-size:19px; font-weight:800; font-family:ui-monospace, Menlo, Consolas, monospace;}
+  .stats .t{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+  canvas#next{background:#0a0f22; border:1px solid var(--line); border-radius:8px; display:block; margin:0 auto;}
+  .btnrow{display:flex; gap:8px;}
+  button.act, a.sharebtn{
+    flex:1; appearance:none; border:1px solid var(--line); background:var(--panel2); color:var(--text);
+    font-size:15px; font-weight:700; padding:11px 8px; border-radius:10px; cursor:pointer; text-align:center;
+    text-decoration:none; display:inline-block;
+  }
+  button.act:hover, a.sharebtn:hover{border-color:var(--accent);}
+  button.act.primary{background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#14100a; border:none;}
+  body[data-mode="nap"] button.act.primary{color:#0a1226;}
+  #lbList{margin:4px 0 0; padding-left:20px; font-size:13.5px; line-height:1.55;}
+  #lbList .d{color:var(--muted); font-size:11.5px;}
+  .controls{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;
+    max-width:520px; margin:14px auto 0;
+  }
+  .controls button{
+    appearance:none; border:1px solid var(--line); background:var(--panel2); color:var(--text);
+    font-size:21px; padding:13px 0; border-radius:12px; cursor:pointer; user-select:none; touch-action:none;
+  }
+  .controls button:active{background:var(--accent); color:#14100a;}
+  .help{color:var(--muted); font-size:12.5px; text-align:center; margin-top:10px; line-height:1.6;}
+  footer{
+    margin-top:22px; border-top:1px solid var(--line); padding-top:12px;
+    color:var(--muted); font-size:12.5px; text-align:center; line-height:1.65;
+  }
+  footer .credit{color:var(--text); font-weight:600;}
+</style>
+</head>
+<body data-mode="warm">
+<div class="wrap">
+
+  <header>
+    <h1>🐹 SQUEEK STACK</h1>
+    <div class="sub"><b>Build the Block</b> — stack falling blocks while Squeektoshi runs (or naps 💤) on his real wheel.</div>
+  </header>
+
+  <!-- Live Squeekchain HUD (display only, read-only public API) -->
+  <div class="hud">
+    <div class="cell"><span class="k">🐹 Hamster</span><span class="v" id="hudStatus">connecting…</span></div>
+    <div class="cell"><span class="k">🎡 Wheel RPM</span><span class="v" id="hudRpm">—</span></div>
+    <div class="cell"><span class="k">🏃 Speed</span><span class="v" id="hudSpeed">—</span></div>
+    <div class="cell"><span class="k">📏 Session distance</span><span class="v" id="hudDist">—</span></div>
+    <div class="cell"><span class="k">🔄 Round</span><span class="v" id="hudRound">—</span></div>
+    <div class="cell"><span class="k">✅ Settled thru</span><span class="v" id="hudSettled">—</span></div>
+    <div class="cell"><span class="k">🧱 Block height</span><span class="v" id="hudBlock">—</span></div>
+    <div class="cell"><span class="k">⚙️ Difficulty</span><span class="v" id="hudDiff">—</span></div>
+    <div class="cell"><span class="k">🪙 SQK minted / cap</span><span class="v small" id="hudMinted">—</span></div>
+  </div>
+  <div id="apiNote"></div>
+
+  <div class="realblock">
+    <div class="lbl"><span>⛏️ <b>REAL BLOCK</b> — Squeektoshi's progress toward the next on-chain block</span><span id="realText">—</span></div>
+    <div class="bar"><div id="realFill"></div></div>
+  </div>
+
+  <div id="banner"></div>
+
+  <div class="game-area">
+    <canvas id="board" width="300" height="600"></canvas>
+    <div class="side">
+      <div class="card">
+        <h3>Score</h3>
+        <div class="stats">
+          <div><div class="n" id="statScore">0</div><div class="t">Points</div></div>
+          <div><div class="n" id="statLines">0</div><div class="t">Lines</div></div>
+          <div><div class="n" id="statLevel">1</div><div class="t">Level</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Next block</h3>
+        <canvas id="next" width="120" height="120"></canvas>
+      </div>
+      <div class="card">
+        <div class="btnrow">
+          <button class="act primary" id="startBtn">▶ Start</button>
+          <button class="act" id="pauseBtn">⏸ Pause</button>
+        </div>
+        <div class="btnrow" style="margin-top:8px;">
+          <a class="sharebtn" id="shareBtn" href="#" target="_blank" rel="noopener">𝕏 Share score</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🏆 Session leaderboard (this device)</h3>
+        <ol id="lbList"></ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" aria-label="Touch controls">
+    <button id="btnLeft" aria-label="Move left">◀</button>
+    <button id="btnRotate" aria-label="Rotate">⟳</button>
+    <button id="btnDown" aria-label="Soft drop">▼</button>
+    <button id="btnRight" aria-label="Move right">▶</button>
+    <button id="btnDrop" aria-label="Hard drop">⤓</button>
+  </div>
+
+  <div class="help">
+    ⌨️ Keyboard: ← → move · ↓ soft drop · ↑ rotate · <b>Space</b> hard drop · <b>P</b> pause · <b>Enter</b> start<br>
+    ⚡ The live difficulty (<i>workPerThousandBlocks</i>) speeds the fall while Squeektoshi runs.
+    When he is IDLE the game slips into <b>💤 NAP MODE</b> — slow fall, blue theme.
+    A real on-chain block landing mid-game pays <b>+500</b>!
+  </div>
+
+  <footer>
+    <div>Fan-made community game for the Squeekchain Sepolia testnet. Not affiliated with the Squeekchain team. Testnet assets have no monetary value.</div>
+    <div class="credit">Built by Didinska (@Didinska0610)</div>
+    <div>Live data: api.squeekchain.com · /v1/status · /v1/economy/state (read-only, no wallet needed)</div>
+  </footer>
+
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   SQUEEK STACK: Build the Block
+   A fan-made falling-block game driven by live Squeekchain
+   Sepolia testnet data (public, read-only API — no wallet).
+   ========================================================= */
+
+// ---------- Live Squeekchain state ----------
+var API_BASE = 'https://api.squeekchain.com';
+var live = {
+  loaded: false,        // at least one successful poll
+  statusOk: false,      // last /v1/status poll succeeded
+  coreStatus: null,     // measurement.coreStatus: "RUNNING" | "IDLE" | ...
+  rpm: 0,               // measurement.rpmMilli / 1000
+  speedMmS: 0,          // measurement.speedMmPerSecond
+  distanceMm: 0,        // measurement.distanceMm (current session)
+  blockHeight: null,    // builder.anchor.blockHeight
+  blockProgress: 0,     // builder.anchor.blockProgress (block-units, 1 block = 1e9)
+  workPerThousandBlocks: 10000, // builder.anchor.workPerThousandBlocks (difficulty)
+  settledRound: null,   // builder.anchor.settledThroughRound
+  currentRound: null,   // economy: capabilities.core.currentRound
+  sqkMintedBase: null,  // economy: supply.totalMintedBaseUnits (18 decimals)
+  sqkCapBase: '2100000000000000000000000000' // economy: supply.capBaseUnits = 2.1B SQK
+};
+var lastBlockHeight = null; // for real-block bonus detection
+
+function fmtInt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('en-US');
+}
+function fmtSQK(baseUnits) {
+  if (baseUnits === null || baseUnits === undefined) return '—';
+  try {
+    var v = BigInt(baseUnits);
+    var whole = v / (10n ** 18n);
+    var frac = (v % (10n ** 18n)) / (10n ** 16n); // 2 decimal places
+    return whole.toLocaleString('en-US') + '.' + String(frac).padStart(2, '0');
+  } catch (e) { return '—'; }
+}
+function mintedPct() {
+  if (!live.sqkMintedBase) return null;
+  try {
+    var v = BigInt(live.sqkMintedBase), c = BigInt(live.sqkCapBase);
+    if (c === 0n) return null;
+    return (Number((v * 1000000n) / c) / 10000).toFixed(4) + '% of cap';
+  } catch (e) { return null; }
+}
+
+function onNewLiveData() {
+  // Mode follows the hamster: IDLE -> NAP MODE, RUNNING -> warm/run theme.
+  if (live.coreStatus === 'IDLE') document.body.dataset.mode = 'nap';
+  else if (live.coreStatus === 'RUNNING') document.body.dataset.mode = 'warm';
+  // Real block bonus: the chain's blockHeight incremented while playing.
+  if (live.blockHeight !== null) {
+    if (lastBlockHeight !== null && live.blockHeight > lastBlockHeight && state === 'playing') {
+      var gained = live.blockHeight - lastBlockHeight;
+      score += 500 * gained;
+      showBanner('🎉 REAL BLOCK #' + live.blockHeight + ' MINED BY SQUEEKTOSHI! +' + (500 * gained) + ' 🐹⛏️');
+      updateStats();
+    }
+    lastBlockHeight = live.blockHeight;
+  }
+}
+
+function updateHUD() {
+  var st = document.getElementById('hudStatus');
+  if (!live.loaded) st.textContent = 'connecting…';
+  else if (live.coreStatus === 'RUNNING') st.textContent = '🏃 RUNNING';
+  else if (live.coreStatus === 'IDLE') st.textContent = '💤 IDLE — NAP MODE';
+  else st.textContent = live.coreStatus || '—';
+  document.getElementById('hudRpm').textContent = live.loaded ? (Math.round(live.rpm * 10) / 10).toString() : '—';
+  document.getElementById('hudSpeed').textContent = live.loaded ? fmtInt(live.speedMmS) + ' mm/s' : '—';
+  document.getElementById('hudDist').textContent = live.loaded ? (live.distanceMm / 1000000).toFixed(2) + ' km' : '—';
+  document.getElementById('hudRound').textContent = live.currentRound !== null ? fmtInt(live.currentRound) : '—';
+  document.getElementById('hudSettled').textContent = live.settledRound !== null ? fmtInt(live.settledRound) : '—';
+  document.getElementById('hudBlock').textContent = live.blockHeight !== null ? '#' + fmtInt(live.blockHeight) : '—';
+  document.getElementById('hudDiff').textContent = live.loaded ? fmtInt(live.workPerThousandBlocks) + ' work/1k' : '—';
+  var pct = mintedPct();
+  document.getElementById('hudMinted').textContent = live.sqkMintedBase
+    ? fmtSQK(live.sqkMintedBase) + ' / ' + fmtSQK(live.sqkCapBase) + (pct ? ' (' + pct + ')' : '')
+    : '—';
+  var frac = Math.min(1, Math.max(0, live.blockProgress / 1e9));
+  document.getElementById('realFill').style.width = (frac * 100).toFixed(1) + '%';
+  document.getElementById('realText').textContent = live.blockHeight !== null
+    ? 'Block #' + fmtInt(live.blockHeight) + ' · ' + (frac * 100).toFixed(1) + '% to next block'
+    : '—';
+  var note = document.getElementById('apiNote');
+  if (live.loaded && !live.statusOk) {
+    note.textContent = '⚠ API unreachable — playing offline values (last good data kept, game still works)';
+    note.style.display = 'block';
+  } else if (!live.loaded) {
+    note.textContent = '📡 Connecting to the Squeekchain API…';
+    note.style.display = 'block';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+async function pollStatus() {
+  try {
+    var r = await fetch(API_BASE + '/v1/status', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var d = await r.json();
+    var m = d.measurement || {};
+    var a = (d.builder && d.builder.anchor) || {};
+    if (m.coreStatus) live.coreStatus = m.coreStatus;
+    if (typeof m.rpmMilli === 'number') live.rpm = m.rpmMilli / 1000;
+    if (typeof m.speedMmPerSecond === 'number') live.speedMmS = m.speedMmPerSecond;
+    if (typeof m.distanceMm === 'number') live.distanceMm = m.distanceMm;
+    if (a.blockHeight != null) live.blockHeight = parseInt(a.blockHeight, 10);
+    if (a.blockProgress != null) live.blockProgress = parseInt(a.blockProgress, 10);
+    if (a.workPerThousandBlocks != null) live.workPerThousandBlocks = parseInt(a.workPerThousandBlocks, 10);
+    if (a.settledThroughRound != null) live.settledRound = parseInt(a.settledThroughRound, 10);
+    live.loaded = true; live.statusOk = true;
+    onNewLiveData();
+  } catch (e) {
+    live.statusOk = false; // keep last good values; game continues offline
+  }
+  updateHUD();
+}
+
+async function pollEconomy() {
+  try {
+    var r = await fetch(API_BASE + '/v1/economy/state', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var d = await r.json();
+    if (d.supply) {
+      if (d.supply.totalMintedBaseUnits) live.sqkMintedBase = d.supply.totalMintedBaseUnits;
+      if (d.supply.capBaseUnits) live.sqkCapBase = d.supply.capBaseUnits;
+    }
+    var core = (d.capabilities && d.capabilities.core) || {};
+    if (core.currentRound != null) live.currentRound = parseInt(core.currentRound, 10);
+    else if (d.lifecycle && d.lifecycle.currentRound != null) live.currentRound = parseInt(d.lifecycle.currentRound, 10);
+    if (core.blockHeight != null && live.blockHeight === null) live.blockHeight = parseInt(core.blockHeight, 10);
+    live.loaded = true;
+    onNewLiveData();
+  } catch (e) { /* keep last good values */ }
+  updateHUD();
+}
+
+// ---------- Game constants ----------
+var COLS = 10, ROWS = 20, CELL = 30;
+var SHAPES = {
+  I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  J: [[1,0,0],[1,1,1],[0,0,0]],
+  L: [[0,0,1],[1,1,1],[0,0,0]],
+  O: [[1,1],[1,1]],
+  S: [[0,1,1],[1,1,0],[0,0,0]],
+  T: [[0,1,0],[1,1,1],[0,0,0]],
+  Z: [[1,1,0],[0,1,1],[0,0,0]]
+};
+var COLORS = { I:'#22d3ee', J:'#60a5fa', L:'#fb923c', O:'#facc15', S:'#4ade80', T:'#c084fc', Z:'#f87171' };
+var TYPES = Object.keys(SHAPES);
+var LINE_POINTS = [0, 100, 300, 500, 800];
+
+// ---------- Game state ----------
+var board, bag, current, nextType, score, lines, level, state, softDropping, dropCounter, lastTime;
+state = 'ready'; softDropping = false; dropCounter = 0; lastTime = 0;
+score = 0; lines = 0; level = 1;
+
+var canvas = document.getElementById('board');
+var ctx = canvas.getContext('2d');
+var nextCanvas = document.getElementById('next');
+var nctx = nextCanvas.getContext('2d');
+
+function emptyBoard() {
+  var b = [];
+  for (var y = 0; y < ROWS; y++) { var row = []; for (var x = 0; x < COLS; x++) row.push(0); b.push(row); }
+  return b;
+}
+function refillBag() {
+  bag = TYPES.slice();
+  for (var i = bag.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+  }
+}
+function drawFromBag() { if (!bag || bag.length === 0) refillBag(); return bag.pop(); }
+
+function spawnPiece(type) {
+  var matrix = SHAPES[type].map(function (row) { return row.slice(); });
+  return { type: type, matrix: matrix, x: Math.floor((COLS - matrix[0].length) / 2), y: 0 };
+}
+function collide(matrix, px, py) {
+  for (var y = 0; y < matrix.length; y++) {
+    for (var x = 0; x < matrix[y].length; x++) {
+      if (!matrix[y][x]) continue;
+      var bx = px + x, by = py + y;
+      if (bx < 0 || bx >= COLS || by >= ROWS) return true;
+      if (by >= 0 && board[by][bx]) return true;
+    }
+  }
+  return false;
+}
+function mergePiece() {
+  for (var y = 0; y < current.matrix.length; y++) {
+    for (var x = 0; x < current.matrix[y].length; x++) {
+      if (!current.matrix[y][x]) continue;
+      var by = current.y + y, bx = current.x + x;
+      if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) board[by][bx] = current.type;
+    }
+  }
+}
+function clearLines() {
+  var cleared = 0;
+  for (var y = ROWS - 1; y >= 0; y--) {
+    var full = true;
+    for (var x = 0; x < COLS; x++) if (!board[y][x]) { full = false; break; }
+    if (full) { board.splice(y, 1); var row = []; for (var i = 0; i < COLS; i++) row.push(0); board.unshift(row); cleared++; y++; }
+  }
+  if (cleared > 0) {
+    score += LINE_POINTS[cleared] * level;
+    lines += cleared;
+    level = Math.floor(lines / 10) + 1;
+    updateStats();
+  }
+}
+function lockPiece() {
+  mergePiece();
+  clearLines();
+  current = spawnPiece(nextType);
+  nextType = drawFromBag();
+  drawNext();
+  if (collide(current.matrix, current.x, current.y)) gameOver();
+}
+function stepDown() {
+  if (!collide(current.matrix, current.x, current.y + 1)) {
+    current.y++;
+    if (softDropping) { score += 1; updateStats(); }
+  } else {
+    lockPiece();
+  }
+}
+function move(dx) {
+  if (state !== 'playing' || !current) return;
+  if (!collide(current.matrix, current.x + dx, current.y)) current.x += dx;
+}
+function rotate() {
+  if (state !== 'playing' || !current) return;
+  var m = current.matrix, N = m.length, rot = [];
+  for (var x = 0; x < N; x++) { var row = []; for (var y = N - 1; y >= 0; y--) row.push(m[y][x]); rot.push(row); }
+  var kicks = [0, -1, 1, -2, 2];
+  for (var i = 0; i < kicks.length; i++) {
+    if (!collide(rot, current.x + kicks[i], current.y)) { current.matrix = rot; current.x += kicks[i]; return; }
+  }
+}
+function hardDrop() {
+  if (state !== 'playing' || !current) return;
+  var dist = 0;
+  while (!collide(current.matrix, current.x, current.y + 1)) { current.y++; dist++; }
+  score += dist * 2;
+  updateStats();
+  lockPiece();
+}
+function ghostY() {
+  var gy = current.y;
+  while (!collide(current.matrix, current.x, gy + 1)) gy++;
+  return gy;
+}
+
+// ---------- Falling speed: level gravity x live Squeekchain data ----------
+function gravityMs() {
+  var table = [800, 720, 630, 550, 470, 400, 340, 290, 240, 200, 170, 150, 130, 115, 100, 88, 76, 66, 57, 50];
+  var base = table[Math.min(level - 1, table.length - 1)];
+  // Difficulty factor from the chain's live workPerThousandBlocks (~9546 at launch).
+  var diff = Math.min(1.8, Math.max(0.6, live.workPerThousandBlocks / 10000));
+  if (live.coreStatus === 'IDLE') return base * 2.8;        // 💤 NAP MODE: slow fall
+  if (live.coreStatus === 'RUNNING') return base / diff;    // 🏃 running: difficulty boosts speed
+  return base;
+}
+
+// ---------- Rendering ----------
+function drawCell(c, x, y, color, alpha) {
+  c.globalAlpha = alpha;
+  c.fillStyle = color;
+  c.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+  c.fillStyle = 'rgba(255,255,255,0.22)';
+  c.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, 5);
+  c.globalAlpha = 1;
+}
+function drawPiece(c, piece, atY, alpha) {
+  for (var y = 0; y < piece.matrix.length; y++) {
+    for (var x = 0; x < piece.matrix[y].length; x++) {
+      if (!piece.matrix[y][x]) continue;
+      var by = atY + y;
+      if (by < 0) continue;
+      drawCell(c, piece.x + x, by, COLORS[piece.type], alpha);
+    }
+  }
+}
+function overlay(text, sub) {
+  ctx.fillStyle = 'rgba(4,8,20,0.78)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#e7ebf5';
+  ctx.textAlign = 'center';
+  ctx.font = '800 25px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2 - 8);
+  ctx.font = '14px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#93a0bd';
+  ctx.fillText(sub, canvas.width / 2, canvas.height / 2 + 20);
+}
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // grid
+  ctx.strokeStyle = 'rgba(120,140,190,0.10)';
+  ctx.lineWidth = 1;
+  for (var x = 1; x < COLS; x++) { ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, canvas.height); ctx.stroke(); }
+  for (var y = 1; y < ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(canvas.width, y * CELL); ctx.stroke(); }
+  if (board) {
+    for (var by = 0; by < ROWS; by++)
+      for (var bx = 0; bx < COLS; bx++)
+        if (board[by][bx]) drawCell(ctx, bx, by, COLORS[board[by][bx]], 1);
+  }
+  if (current && (state === 'playing' || state === 'paused')) {
+    drawPiece(ctx, current, ghostY(), 0.25); // ghost
+    drawPiece(ctx, current, current.y, 1);
+  }
+  if (document.body.dataset.mode === 'nap' && state === 'playing') {
+    ctx.fillStyle = 'rgba(40,80,200,0.10)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('💤', canvas.width - 10, 34);
+  }
+  if (state === 'ready') overlay('🐹 SQUEEK STACK', 'Press Start (or Enter) to play');
+  else if (state === 'paused') overlay('⏸ PAUSED', 'Press P or Pause to resume');
+  else if (state === 'over') overlay('🧱 GAME OVER', 'Score: ' + score + ' — Start to play again');
+}
+function drawNext() {
+  nctx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  if (!nextType) return;
+  var m = SHAPES[nextType];
+  var minX = 99, maxX = -1, minY = 99, maxY = -1;
+  for (var y = 0; y < m.length; y++) for (var x = 0; x < m[y].length; x++) if (m[y][x]) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  var w = (maxX - minX + 1) * CELL, h = (maxY - minY + 1) * CELL;
+  var offX = (nextCanvas.width - w) / 2, offY = (nextCanvas.height - h) / 2;
+  for (var yy = minY; yy <= maxY; yy++) for (var xx = minX; xx <= maxX; xx++) if (m[yy][xx]) {
+    nctx.fillStyle = COLORS[nextType];
+    nctx.fillRect(offX + (xx - minX) * CELL + 1, offY + (yy - minY) * CELL + 1, CELL - 2, CELL - 2);
+    nctx.fillStyle = 'rgba(255,255,255,0.22)';
+    nctx.fillRect(offX + (xx - minX) * CELL + 1, offY + (yy - minY) * CELL + 1, CELL - 2, 5);
+  }
+}
+
+// ---------- Stats, banner, leaderboard, share ----------
+function updateStats() {
+  document.getElementById('statScore').textContent = score.toLocaleString('en-US');
+  document.getElementById('statLines').textContent = lines;
+  document.getElementById('statLevel').textContent = level;
+  updateShareLink();
+}
+var bannerTimer = null;
+function showBanner(text) {
+  var b = document.getElementById('banner');
+  b.textContent = text;
+  b.classList.add('show');
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(function () { b.classList.remove('show'); }, 4000);
+}
+var LB_KEY = 'squeekstack_leaderboard_v1';
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch (e) { return []; }
+}
+function saveScore() {
+  if (score <= 0) return;
+  var lb = loadLB();
+  lb.push({ score: score, lines: lines, level: level, date: new Date().toLocaleDateString('en-CA') });
+  lb.sort(function (a, b) { return b.score - a.score; });
+  lb = lb.slice(0, 10);
+  try { localStorage.setItem(LB_KEY, JSON.stringify(lb)); } catch (e) { /* storage unavailable */ }
+  renderLB();
+}
+function renderLB() {
+  var lb = loadLB();
+  var el = document.getElementById('lbList');
+  if (!lb.length) { el.innerHTML = '<li>No scores yet — be the first! 🐹</li>'; return; }
+  el.innerHTML = lb.map(function (e) {
+    return '<li><b>' + e.score.toLocaleString('en-US') + '</b> pts · ' + e.lines + ' lines · Lv ' + e.level + ' <span class="d">' + e.date + '</span></li>';
+  }).join('');
+}
+function updateShareLink() {
+  var text = '🐹 I scored ' + score + ' points stacking blocks in SQUEEK STACK — the fan-made game whose speed follows Squeektoshi\'s real wheel, live on @squeekchain (Sepolia testnet)! Can you beat me? 🧱🎡';
+  document.getElementById('shareBtn').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+}
+
+// ---------- Game flow ----------
+function startGame() {
+  board = emptyBoard();
+  refillBag();
+  score = 0; lines = 0; level = 1;
+  softDropping = false; dropCounter = 0;
+  nextType = drawFromBag();
+  current = spawnPiece(drawFromBag());
+  drawNext();
+  state = 'playing';
+  document.getElementById('startBtn').textContent = '↻ Restart';
+  updateStats();
+}
+function togglePause() {
+  if (state === 'playing') state = 'paused';
+  else if (state === 'paused') state = 'playing';
+}
+function gameOver() {
+  state = 'over';
+  saveScore();
+  updateShareLink();
+  showBanner('🧱 GAME OVER — final score ' + score.toLocaleString('en-US') + ' pts. Saved to the leaderboard!');
+}
+function loop(t) {
+  requestAnimationFrame(loop);
+  if (!lastTime) lastTime = t;
+  var dt = t - lastTime;
+  lastTime = t;
+  if (state === 'playing' && current) {
+    dropCounter += dt;
+    var interval = softDropping ? Math.min(30, gravityMs()) : gravityMs();
+    if (dropCounter >= interval) { stepDown(); dropCounter = 0; }
+  }
+  draw();
+}
+
+// ---------- Controls: keyboard ----------
+document.addEventListener('keydown', function (e) {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Space'].indexOf(e.code) !== -1) e.preventDefault();
+  if (e.code === 'Enter' && state !== 'playing') { startGame(); return; }
+  if (e.code === 'KeyP') { togglePause(); return; }
+  if (state !== 'playing') return;
+  switch (e.code) {
+    case 'ArrowLeft': move(-1); break;
+    case 'ArrowRight': move(1); break;
+    case 'ArrowDown': softDropping = true; break;
+    case 'ArrowUp': rotate(); break;
+    case 'Space': if (!e.repeat) hardDrop(); break;
+  }
+});
+document.addEventListener('keyup', function (e) {
+  if (e.code === 'ArrowDown') softDropping = false;
+});
+
+// ---------- Controls: touch / pointer buttons ----------
+function holdRepeat(id, fn, repeatable) {
+  var el = document.getElementById(id);
+  var delay = null, iv = null;
+  function clear() { if (delay) clearTimeout(delay); if (iv) clearInterval(iv); delay = null; iv = null; }
+  el.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    fn();
+    if (repeatable) {
+      delay = setTimeout(function () { iv = setInterval(fn, 120); }, 180);
+    }
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { el.addEventListener(ev, clear); });
+  el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+}
+holdRepeat('btnLeft', function () { move(-1); }, true);
+holdRepeat('btnRight', function () { move(1); }, true);
+holdRepeat('btnRotate', function () { rotate(); }, false);
+holdRepeat('btnDrop', function () { hardDrop(); }, false);
+(function () {
+  var el = document.getElementById('btnDown');
+  el.addEventListener('pointerdown', function (e) { e.preventDefault(); softDropping = true; });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+    el.addEventListener(ev, function () { softDropping = false; });
+  });
+  el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+})();
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+
+// ---------- Boot ----------
+board = emptyBoard();
+refillBag();
+nextType = drawFromBag();
+current = spawnPiece(drawFromBag());
+drawNext();
+renderLB();
+updateStats();
+updateHUD();
+pollStatus();
+pollEconomy();
+setInterval(pollStatus, 15000);
+setInterval(pollEconomy, 15000);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
